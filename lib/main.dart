@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
-void main() {
+
+void main(){
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -26,6 +29,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key});
 
@@ -35,7 +39,7 @@ class MainMenu extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('images/mainmenu_background.png', fit: BoxFit.fill),
+            child: Image.asset('assets/images/mainmenu_background.png', fit: BoxFit.fill),
           ),
           Align(
               alignment: Alignment.center,
@@ -63,8 +67,35 @@ class MainMenu extends StatelessWidget {
   }
 }
 
-class Rooms extends StatelessWidget {
+
+class Rooms extends StatefulWidget {
   const Rooms({super.key});
+
+  @override
+  RoomsState createState() => RoomsState();
+}
+
+
+// ЭТО ДОЛЖНО БЫТЬ RoomState для Room, но пока есть только Rooms
+class RoomsState extends State<Rooms> {
+  final AudioPlayer player = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await player.setAsset("assets/audios/Paradox_Interactive_-_Dunka_Dunka.mp3");
+    await player.play();
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +107,7 @@ class Rooms extends StatelessWidget {
     );
   }
 }
+
 
 // ============= HTTP request =============
 //
