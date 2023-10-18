@@ -2,27 +2,33 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 
+import 'package:xo_xo_touch/authorization.dart';
+
 Future<void> main() async {
   // Request socket
   Socket requestSocket = await Socket.connect('4.tcp.eu.ngrok.io', 16643);
+  Stream<Uint8List> socketStream = requestSocket.asBroadcastStream();
   debugPrint('[INFO] request client connected: ${requestSocket.remoteAddress.address}:${requestSocket.remotePort}');
 
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays:[]);
 
-  runApp(MyApp(requestSocket));
+  runApp(MyApp(requestSocket, socketStream));
 }
 
 class MyApp extends StatelessWidget {
   ValueNotifier<String> question = ValueNotifier('Как по-другому назвать одиночное заключение в тюрьме, чтобы звучало получше?');
   Socket requestSocket;
+  Stream<Uint8List> socketStream;
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
 
-  MyApp(this.requestSocket, {super.key}) {
+  MyApp(this.requestSocket, this.socketStream, {super.key}) {
     // Requests
     // https://stackoverflow.com/questions/51077233/how-do-i-use-socket-in-flutter-apps
 
@@ -64,6 +70,8 @@ class MyApp extends StatelessWidget {
         '/room': (context) => const Room(),
         '/profile': (context) => const Placeholder(),
         '/answers': (context) => Answers(requestSocket, question),
+        '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
+                                                            socketStream: socketStream)
       }
     );
   }
@@ -108,6 +116,29 @@ class MainMenu extends StatelessWidget {
               ),
             ),
           ),
+          Align(
+              alignment: const Alignment(-0.92, 0.97),
+              child: SizedBox(
+                  width: 130, // <-- Your width
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/authorization');
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(255, 44, 183, 100),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                        padding: const EdgeInsets.all(12)
+                    ),
+                    child: const Text('Login/Register', style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                    )),
+                  )
+              )
+          )
         ],
       ),
     );
