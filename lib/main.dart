@@ -147,74 +147,72 @@ class Answers extends StatelessWidget {
       fontFamily: 'Merriweather',
     );
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
-        appBar: AppBar(
-          backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
-          centerTitle: true,
-          title: Text("XO-XO-TOUCH", style: styleText.copyWith(fontSize: 40)),
-        ),
-        body: ValueListenableBuilder<String>(
-          valueListenable: question,
-          builder: (context, value, child) {
-            return Column(
-              children: [
-                const SizedBox(height: 50),
-                Text(
-                  question.value.toString(),
-                  style: styleText,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-                Container(
-                  alignment: Alignment.topCenter,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.9,
-                    child: TextField(
-                      // inputFormatters: [
-                      //   UpperCaseTextFormatter(),
-                      // ],
-                      style: styleInput,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: const OutlineInputBorder(),
-                        hintStyle: styleInput.copyWith(color: Colors.black.withOpacity(0.3)),
-                        hintText: 'ТВОЙ ОТВЕТ',
-                      ),
-                      onChanged: (text) {
-                        answer = text;
-                      },
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
+      appBar: AppBar(
+        backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
+        centerTitle: true,
+        title: Text("XO-XO-TOUCH", style: styleText.copyWith(fontSize: 40)),
+      ),
+      body: ValueListenableBuilder<String>(
+        valueListenable: question,
+        builder: (context, value, child) {
+          return Column(
+            children: [
+              const SizedBox(height: 50),
+              Text(
+                question.value.toString(),
+                style: styleText,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              Container(
+                alignment: Alignment.topCenter,
+                child: FractionallySizedBox(
+                  widthFactor: 0.9,
+                  child: TextField(
+                    // inputFormatters: [
+                    //   UpperCaseTextFormatter(),
+                    // ],
+                    style: styleInput,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: const OutlineInputBorder(),
+                      hintStyle: styleInput.copyWith(color: Colors.black.withOpacity(0.3)),
+                      hintText: 'ТВОЙ ОТВЕТ',
                     ),
+                    onChanged: (text) {
+                      answer = text;
+                    },
                   ),
                 ),
-                const SizedBox(height: 30),
-                Container(
-                  alignment: Alignment.topCenter,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.9,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        requestSocket.add(utf8.encode('$answer\n'));
-                      },
-                      style: ButtonStyle(
-                        padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(20)),
-                        backgroundColor: const MaterialStatePropertyAll<Color>(Color.fromRGBO(115, 62, 224, 1.0)),
-                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
+              ),
+              const SizedBox(height: 30),
+              Container(
+                alignment: Alignment.topCenter,
+                child: FractionallySizedBox(
+                  widthFactor: 0.9,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      requestSocket.add(utf8.encode('$answer\n'));
+                    },
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(20)),
+                      backgroundColor: const MaterialStatePropertyAll<Color>(Color.fromRGBO(115, 62, 224, 1.0)),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
                         ),
                       ),
-                      child: const Text("Ответить", style: styleInput),
                     ),
+                    child: const Text("Ответить", style: styleInput),
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
