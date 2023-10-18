@@ -290,12 +290,3 @@ class _RoomState extends State<Room> {
     );
   }
 }
-
-
-// ============= HTTP request =============
-//
-// http.get(Uri.parse('https://70c5-83-220-237-145.ngrok.io/?userId=Ivan')).then((response) {
-//   print(jsonDecode(response.body));
-// }).catchError((error){
-//   print("Error: $error");
-// });
