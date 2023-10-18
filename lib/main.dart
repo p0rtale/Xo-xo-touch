@@ -12,6 +12,9 @@ Future<void> main() async {
   Socket requestSocket = await Socket.connect('6.tcp.eu.ngrok.io', 11980);
   debugPrint('[INFO] request client connected: ${requestSocket.remoteAddress.address}:${requestSocket.remotePort}');
 
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays:[]);
+
   runApp(MyApp(requestSocket));
 }
 
