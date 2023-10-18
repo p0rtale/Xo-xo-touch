@@ -9,7 +9,7 @@ import 'dart:async';
 
 Future<void> main() async {
   // Request socket
-  Socket requestSocket = await Socket.connect('6.tcp.eu.ngrok.io', 11980);
+  Socket requestSocket = await Socket.connect('4.tcp.eu.ngrok.io', 16643);
   debugPrint('[INFO] request client connected: ${requestSocket.remoteAddress.address}:${requestSocket.remotePort}');
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
     // });
 
     // Listen broadcasts
-    Socket.connect('localhost', 5556).then((socket) {
+    Socket.connect('0.tcp.eu.ngrok.io', 14040).then((socket) {
       debugPrint('[INFO] broadcast client connected: ${socket.remoteAddress.address}:${socket.remotePort}');
       socket.listen((List<int> event) {
         var data = utf8.decode(event).replaceAll("\n", r"\n");
