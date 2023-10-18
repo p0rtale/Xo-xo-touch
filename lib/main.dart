@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/mainmenu',
       routes: {  // TODO: https://stackoverflow.com/questions/63612663/prevent-unauthenticated-users-from-navigating-to-a-route-using-a-url-in-a-flutte
         '/mainmenu': (context) => MainMenu(requestSocket),
-        '/rooms': (context) => const Rooms(),
+        '/room': (context) => const Room(),
         '/profile': (context) => const Placeholder(),
         '/answers': (context) => Answers(requestSocket, question),
       }
@@ -89,8 +89,9 @@ class MainMenu extends StatelessWidget {
               height: 90,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/rooms');
+                  // Navigator.pushNamed(context, '/room');
                   // Navigator.of(context).pushNamedAndRemoveUntil('/answers', (route) => false);
+                  Navigator.of(context).pushNamedAndRemoveUntil('/room', (route) => false);
 
                   // Test request
                   // requestSocket.add(utf8.encode('ABOBA\n'));
