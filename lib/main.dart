@@ -277,19 +277,17 @@ class _RoomState extends State<Room> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
-        appBar: AppBar(
-          backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
-          centerTitle: true,
-          title: Text("Комната ожидания", style: styleText.copyWith(fontSize: 30)),
-          automaticallyImplyLeading: false,
-        ),
-        body: ListView(
-          padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
-          children: _players,
-        ),
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
+      appBar: AppBar(
+        backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
+        centerTitle: true,
+        title: Text("Комната ожидания", style: styleText.copyWith(fontSize: 30)),
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+        children: _players,
       ),
     );
   }
