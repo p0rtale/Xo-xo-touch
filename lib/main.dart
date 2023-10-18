@@ -220,16 +220,42 @@ class Answers extends StatelessWidget {
   }
 }
 
-class Rooms extends StatefulWidget {
-  const Rooms({super.key});
+class Room extends StatefulWidget {
+  const Room({super.key});
 
   @override
-  State<Rooms> createState() => _RoomsState();
+  State<Room> createState() => _RoomState();
 }
 
-// ЭТО ДОЛЖНО БЫТЬ RoomState для Room, но пока есть только Rooms
-class _RoomsState extends State<Rooms> {
+class _RoomState extends State<Room> {
+  static const styleText = TextStyle(
+    fontSize: 25.0,
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    fontFamily: 'Merriweather',
+  );
+  static const styleNickname = TextStyle(
+    fontSize: 25.0,
+    color: Colors.black,
+    fontWeight: FontWeight.bold,
+    fontFamily: 'Merriweather',
+  );
+
   final AudioPlayer player = AudioPlayer();
+  final List<Widget> _players = [
+      const Card(
+        child: ListTile(
+          leading: Icon(Icons.person),
+          title: Text('Ankalot', style: styleNickname),
+        ),
+      ),
+      const Card(
+        child: ListTile(
+          leading: Icon(Icons.person),
+          title: Text('Zlatoivan', style: styleNickname),
+        ),
+      ),
+  ];
 
   @override
   void initState() {
@@ -251,11 +277,20 @@ class _RoomsState extends State<Rooms> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Rooms"),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
+        appBar: AppBar(
+          backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
+          centerTitle: true,
+          title: Text("Комната ожидания", style: styleText.copyWith(fontSize: 30)),
+          automaticallyImplyLeading: false,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          children: _players,
+        ),
       ),
-      body: const Placeholder(),
     );
   }
 }
