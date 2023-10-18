@@ -83,8 +83,8 @@ class MainMenu extends StatelessWidget {
             child: Image.asset('assets/images/mainmenu_background.png', fit: BoxFit.fill),
           ),
           Align(
-              alignment: Alignment.center,
-              child: SizedBox(
+            alignment: Alignment.center,
+            child: SizedBox(
               width: 90,
               height: 90,
               child: ElevatedButton(
@@ -104,7 +104,8 @@ class MainMenu extends StatelessWidget {
                   color: Colors.black,
                   fontSize: 14,
                 )),
-              ))
+              ),
+            ),
           ),
         ],
       ),
@@ -136,14 +137,12 @@ class Answers extends StatelessWidget {
       fontSize: 25.0,
       color: Colors.white,
       fontWeight: FontWeight.bold,
-      // letterSpacing: 1.1,question
       fontFamily: 'Merriweather',
     );
     const styleInput = TextStyle(
       fontSize: 25.0,
       color: Colors.black,
       fontWeight: FontWeight.bold,
-      // letterSpacing: 1.1,
       fontFamily: 'Merriweather',
     );
 
