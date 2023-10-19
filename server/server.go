@@ -90,6 +90,10 @@ type UserJWTClaims struct {
 	jwt.StandardClaims
 }
 
+type RequestNewClient struct {
+	Method string `json:"method"`
+}
+
 var tokenSecret = []byte("super secret")
 
 func createJWT(userId string, username string) string {
@@ -431,7 +435,7 @@ func (mem *Memory) newClient(connReq net.Conn, connBrcast net.Conn) {
 			return
 		}
 		fmt.Println("Message Received:", data)
-		req := &struct{ Method string }{Method: ""}
+		req := &RequestNewClient{}
 		err = json.Unmarshal([]byte(data), &req)
 		if err != nil {
 			log.Println(err)
