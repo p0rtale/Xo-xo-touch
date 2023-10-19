@@ -12,7 +12,8 @@ import 'package:xo_xo_touch/authorization.dart';
 
 Future<void> main() async {
   // Request socket
-  Socket requestSocket = await Socket.connect('4.tcp.eu.ngrok.io', 16643);
+  Socket requestSocket = await Socket.connect('5.tcp.eu.ngrok.io', 13099);
+  // Socket requestSocket = await Socket.connect('localhost', 5555);
   Stream<Uint8List> socketStream = requestSocket.asBroadcastStream();
   debugPrint('[INFO] request client connected: ${requestSocket.remoteAddress.address}:${requestSocket.remotePort}');
 
@@ -57,8 +58,9 @@ class MyApp extends StatelessWidget {
     // });
 
     // Listen broadcasts
-    Socket.connect('0.tcp.eu.ngrok.io', 14040).then((socket) {
-      debugPrint('[INFO] broadcast client connected: ${socket.remoteAddress.address}:${socket.remotePort}');
+    Socket.connect('5.tcp.eu.ngrok.io', 12779).then((socket) {
+    // Socket.connect('localhost', 5556).then((socket) {
+        debugPrint('[INFO] broadcast client connected: ${socket.remoteAddress.address}:${socket.remotePort}');
       socket.listen((List<int> event) {
         var data = utf8.decode(event).replaceAll("\n", "");
         debugPrint("[INFO] got broadcast: $data");
@@ -72,6 +74,7 @@ class MyApp extends StatelessWidget {
             _roomKey.currentState!.addPlayer(username);
             break;
           case "gamestarted":
+            Navigator.of(_roomKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
             break;
         }
         // question.value = data;
