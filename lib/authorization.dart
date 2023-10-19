@@ -22,6 +22,13 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
   final TextEditingController passwordController = TextEditingController();
   bool _showPassword = false;
 
+  @override
+  void dispose() {
+    loginController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> registerOrLoginUser(bool registerOrLogin) async {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
