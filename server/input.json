@@ -1,0 +1,13 @@
+[
+
+{"method": "register", "username": "dovolniy1", "password": "parol123"}
+{"method": "register", "username": "Yuriy", "password": "parol123"}
+{"method": "register", "username": "Andrew", "password": "parol123"}
+
+{"method": "login", "username": "dovolniy1", "password": "parol123"}
+
+{"method": "entergame", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiZG92b2xuaXkxIiwiaWQiOiI2ODc4YTgyMy03ODU2LTQ3MTQtYTNjYi1mNjVjNzA0Y2QxODgifX0.965GzeFfZuEN8BavUQPAq5SnltSszy-2hJs9NRePkRw"}
+
+{"method": "getduels", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQW5kcmV3IiwiaWQiOiI1N2IwMzkyMS03MWRjLTQ4OWEtODcxZi1kODE4ZDM0MmQ0NjYifX0.dblVIy6zBqwJ5M8dnU0ql1AEM-AFP9iyJ7lK0W6lnRU"}
+
+]
