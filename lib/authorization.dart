@@ -48,20 +48,21 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
 
       String requestStr;
       if (registerOrLogin) {
-        requestStr = "REGISTER";
+        userData["method"] = "register";
       } else {
-        requestStr = "LOGIN";
+        userData["method"] = "login";
       }
-      widget.requestSocket!.add(utf8.encode("$requestStr ${jsonEncode(userData)}\n"));
+
+      widget.requestSocket!.add(utf8.encode("${jsonEncode(userData)}\n"));
 
       StreamSubscription? subscription;
       subscription = widget.socketStream!.listen((event) {
-        var data = utf8.decode(event).replaceAll("\n", r"\n");
+        var data = utf8.decode(event).replaceAll("\n", "");
         var jsonData = jsonDecode(data);
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
         if (jsonData["status"] != 200) { // ERROR!
-          debugPrint("$requestStr failed, status: ${jsonData["status"]}");
+          debugPrint("request failed, status: ${jsonData["status"]}");
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
                 'Error: ${errorMess[jsonData["status"]]}',
@@ -75,6 +76,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
         } else { // EVERYTHING IS OK!
           String jwtToken = jsonDecode(data)["token"];
           widget.storage.write(key: 'jwtToken', value: jwtToken);
+          widget.storage.write(key: "username", value: userData["username"]);
           debugPrint("Recieved jwtToken: $jwtToken");
           Navigator.pushNamed(context, '/mainmenu');
         }
