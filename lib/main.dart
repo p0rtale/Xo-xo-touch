@@ -26,18 +26,34 @@ class MyApp extends StatelessWidget {
   ValueNotifier<String> question = ValueNotifier('Как по-другому назвать одиночное заключение в тюрьме, чтобы звучало получше?');
   Socket requestSocket;
   Stream<Uint8List> socketStream;
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
+
+  String username = "";
+
+  final GlobalKey<_RoomState> _roomKey = GlobalKey();
 
   MyApp(this.requestSocket, this.socketStream, {super.key}) {
-    // Requests
-    // https://stackoverflow.com/questions/51077233/how-do-i-use-socket-in-flutter-apps
-
-    // socket.listen((List<int> event) {
-    // debugPrint("[INFO] got response: ${utf8.decode(event).replaceAll("\n", r"\n")}");
-    // // handle event
-    // }, onDone: () {
-    // debugPrint("[WARN] request client connection closed");
-    // socket.destroy();
+    // Request
+    // var token = "aboba";
+    // var request = {
+    //   "type": "getusername",
+    //   "token": token,
+    // };
+    // requestSocket.add(utf8.encode(jsonEncode(request)));
+    // StreamSubscription? subscription;
+    // subscription = socketStream.listen((event) {
+    //   var data = utf8.decode(event).replaceAll("\n", "");
+    //   var jsonData = jsonDecode(data);
+    //   var status = jsonData["status"];
+    //
+    //   if (status != 200) {
+    //     debugPrint("[WARN] Get username bad status: $status");
+    //     // TODO: handle
+    //   }
+    //
+    //   username = jsonData["username"];
+    //   debugPrint("[INFO] Username: $username");
+    //
+    //   subscription!.cancel();
     // });
 
     // Listen broadcasts
