@@ -94,8 +94,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/mainmenu',
       routes: {  // TODO: https://stackoverflow.com/questions/63612663/prevent-unauthenticated-users-from-navigating-to-a-route-using-a-url-in-a-flutte
-        '/mainmenu': (context) => MainMenu(requestSocket),
-        '/room': (context) => const Room(),
+        '/mainmenu': (context) => MainMenu(requestSocket, socketStream),
+        '/room': (context) {
+          final roomUsernames = ModalRoute.of(context)?.settings.arguments as List<dynamic>;
+          return Room(roomUsernames, key: _roomKey);
+         },
         '/profile': (context) => const Placeholder(),
         '/answers': (context) => Answers(requestSocket, question),
         '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
@@ -278,7 +281,9 @@ class Answers extends StatelessWidget {
 }
 
 class Room extends StatefulWidget {
-  const Room({super.key});
+  var roomUsernames = [];
+
+  Room(this.roomUsernames, {super.key});
 
   @override
   State<Room> createState() => _RoomState();
@@ -299,25 +304,40 @@ class _RoomState extends State<Room> {
   );
 
   final AudioPlayer player = AudioPlayer();
-  final List<Widget> _players = [
-      const Card(
+  List<Widget> _players = [];
+
+  void addPlayer(String nickname) {
+    setState(() {
+      _players = [..._players, Card(
         child: ListTile(
-          leading: Icon(Icons.person),
-          title: Text('Ankalot', style: styleNickname),
+          leading: const Icon(Icons.person),
+          title: Text(nickname, style: styleNickname),
         ),
-      ),
-      const Card(
-        child: ListTile(
-          leading: Icon(Icons.person),
-          title: Text('Zlatoivan', style: styleNickname),
-        ),
-      ),
-  ];
+      )];
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _init();
+
+    const storage = FlutterSecureStorage();
+    final username = storage.read(key: "username");
+
+    username.then((username) {
+      var usernames = [username, ...widget.roomUsernames];
+      for (var username in usernames) {
+        setState(() {
+          _players = [..._players, Card(
+              child: ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(username, style: styleNickname),
+              ),
+          )];
+        });
+      }
+    });
   }
 
   Future<void> _init() async {
