@@ -136,8 +136,10 @@ class MainMenu extends StatelessWidget {
                   // Enter game
                   final token = storage.read(key: "jwtToken");
                   token.then((token) {
+                    debugPrint("[INFO] Enter game token: $token");
+
                     var request = {
-                      "type": "entergame",
+                      "method": "entergame",
                       "token": token,
                     };
                     var jsonRequest = jsonEncode(request);
