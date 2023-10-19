@@ -126,7 +126,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                     ),
                     SizedBox(height: size.height * 0.03),
                     TextFormField(
-                      obscureText: _showPassword,
+                      obscureText: !_showPassword,
                       controller: passwordController,
                       validator: (String? value) {
                         if (value!.isEmpty) {
