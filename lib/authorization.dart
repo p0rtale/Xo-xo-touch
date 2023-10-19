@@ -25,7 +25,13 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
   Future<void> registerOrLoginUser(bool registerOrLogin) async {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Processing Data'),
+        content: const Text(
+          'Processing Data',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.yellow.shade300,
       ));
 
@@ -57,7 +63,13 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
         if (jsonData["status"] != 200) { // ERROR!
           debugPrint("$requestStr failed, status: ${jsonData["status"]}");
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error: ${errorMess[jsonData["status"]]}'),
+            content: Text(
+                'Error: ${errorMess[jsonData["status"]]}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+            ),
             backgroundColor: Colors.red.shade300,
           ));
         } else { // EVERYTHING IS OK!
@@ -105,7 +117,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                       keyboardType: TextInputType.emailAddress,
                       cursorColor: Colors.black,
                       decoration: InputDecoration(
-                        hintText: "Login",
+                        hintText: "Логин",
                         isDense: true,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -124,7 +136,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                       },
                       keyboardType: TextInputType.visiblePassword,
                       decoration: InputDecoration(
-                        hintText: "Password",
+                        hintText: "Пароль",
                         suffixIcon: GestureDetector(
                           onTap: () {
                             setState(() {
@@ -158,7 +170,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 40, vertical: 15)),
                         child: const Text(
-                          "Register",
+                          "Регистрация",
                           style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -181,7 +193,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 40, vertical: 15)),
                         child: const Text(
-                          "Login",
+                          "Вход",
                           style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
