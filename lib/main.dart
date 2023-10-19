@@ -110,8 +110,10 @@ class MyApp extends StatelessWidget {
 
 class MainMenu extends StatelessWidget {
   Socket requestSocket;
+  Stream<Uint8List> socketStream;
+  final storage = const FlutterSecureStorage();
 
-  MainMenu(this.requestSocket, {super.key});
+  MainMenu(this.requestSocket, this.socketStream, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -130,10 +132,36 @@ class MainMenu extends StatelessWidget {
                 onPressed: () {
                   // Navigator.pushNamed(context, '/room');
                   // Navigator.of(context).pushNamedAndRemoveUntil('/answers', (route) => false);
-                  Navigator.of(context).pushNamedAndRemoveUntil('/room', (route) => false);
 
-                  // Test request
-                  // requestSocket.add(utf8.encode('ABOBA\n'));
+                  // Enter game
+                  final token = storage.read(key: "jwtToken");
+                  token.then((token) {
+                    var request = {
+                      "type": "entergame",
+                      "token": token,
+                    };
+                    var jsonRequest = jsonEncode(request);
+                    requestSocket.add(utf8.encode("$jsonRequest\n"));
+
+                    StreamSubscription? subscription;
+                    subscription = socketStream.listen((event) {
+                      var data = utf8.decode(event).replaceAll("\n", "");
+                      var jsonData = jsonDecode(data);
+                      var status = jsonData["status"];
+
+                      if (status != 200) {
+                        debugPrint("[WARN] Enter game bad status: $status");
+                        // TODO: handle
+                      }
+
+                      var usernames = jsonData["usernames"];
+                      debugPrint("[INFO] Enter game usernames: $usernames");
+
+                      Navigator.of(context).pushNamedAndRemoveUntil('/room', (route) => false, arguments: usernames);
+
+                      subscription!.cancel();
+                    });
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(255, 0, 0, 1),
@@ -150,7 +178,7 @@ class MainMenu extends StatelessWidget {
           Align(
               alignment: const Alignment(-0.92, 0.97),
               child: SizedBox(
-                  width: 130, // <-- Your width
+                  width: 150, // <-- Your width
                   height: 45,
                   child: ElevatedButton(
                     onPressed: () {
@@ -163,7 +191,7 @@ class MainMenu extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.all(12)
                     ),
-                    child: const Text('Login/Register', style: TextStyle(
+                    child: const Text('Вход/Регистрация', style: TextStyle(
                       color: Colors.black,
                       fontSize: 14,
                     )),
@@ -200,7 +228,7 @@ class Answers extends StatelessWidget {
       fontSize: 25.0,
       color: Colors.white,
       fontWeight: FontWeight.bold,
-      fontFamily: 'Merriweather',
+      fontFamily: 'Mferriweather',
     );
     const styleInput = TextStyle(
       fontSize: 25.0,
@@ -257,7 +285,7 @@ class Answers extends StatelessWidget {
                   widthFactor: 0.9,
                   child: ElevatedButton(
                     onPressed: () {
-                      requestSocket.add(utf8.encode('$answer\n'));
+                      requestSocket.add(utf8.encode("$answer\n"));
                     },
                     style: ButtonStyle(
                       padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(20)),
