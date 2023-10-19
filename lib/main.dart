@@ -141,6 +141,21 @@ class MainMenu extends StatelessWidget {
                   token.then((token) {
                     debugPrint("[INFO] Enter game token: $token");
 
+                    if (token == null) {
+                      debugPrint("[INFO] No jwtToken");
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: const Text(
+                          "Error: user is not logged in",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        backgroundColor: Colors.red.shade300,
+                      ));
+                      return;
+                    }
+
                     var request = {
                       "method": "entergame",
                       "token": token,
