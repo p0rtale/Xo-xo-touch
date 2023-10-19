@@ -60,9 +60,21 @@ class MyApp extends StatelessWidget {
     Socket.connect('0.tcp.eu.ngrok.io', 14040).then((socket) {
       debugPrint('[INFO] broadcast client connected: ${socket.remoteAddress.address}:${socket.remotePort}');
       socket.listen((List<int> event) {
-        var data = utf8.decode(event).replaceAll("\n", r"\n");
+        var data = utf8.decode(event).replaceAll("\n", "");
         debugPrint("[INFO] got broadcast: $data");
-        question.value = data;
+
+        var jsonData = jsonDecode(data);
+        var eventType = jsonData["type"];
+        debugPrint("[DEBUG] event type: $eventType");
+        switch (eventType) {
+          case "newplayer":
+            var username = jsonData["username"];
+            _roomKey.currentState!.addPlayer(username);
+            break;
+          case "gamestarted":
+            break;
+        }
+        // question.value = data;
       }, onDone: () {
         debugPrint("[WARN] broadcast connection closed");
         socket.destroy();
