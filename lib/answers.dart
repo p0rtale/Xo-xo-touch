@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:just_audio/just_audio.dart';
+
+import 'package:http/http.dart' as http;
 
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
@@ -16,9 +20,14 @@ class UpperCaseTextFormatter extends TextInputFormatter {
   }
 }
 
-class AnswersEnd extends StatelessWidget {
+class AnswersEnd extends StatefulWidget {
   const AnswersEnd({super.key});
 
+  @override
+  State<AnswersEnd> createState() => AnswersEndState();
+}
+
+class AnswersEndState extends State<AnswersEnd> {
   @override
   Widget build(BuildContext context) {
     const styleText = TextStyle(
@@ -56,13 +65,20 @@ class Answers extends StatefulWidget {
   const Answers(this.requestSocket, this.socketStream, {super.key});
 
   @override
-  State<Answers> createState() => _AnswersState();
+  State<Answers> createState() => AnswersState();
 }
 
-class _AnswersState extends State<Answers> {
+class AnswersState extends State<Answers> {
   final storage = const FlutterSecureStorage();
 
-  var question = "";
+  String question = "";
+  final AudioPlayer ttsPlayer = AudioPlayer();
+
+  Future<void> _playQuestion(Uint8List bytes) async {
+    Uint8List audioBytes = bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+    await ttsPlayer.setAudioSource(AudioSource.uri(Uri.dataFromBytes(audioBytes, mimeType: "audio/wav")));
+    await ttsPlayer.play();
+  }
 
   @override
   void initState() {
@@ -101,11 +117,28 @@ class _AnswersState extends State<Answers> {
 
         setState(() {
           question = gameQuestion;
+          answerController.text = "";
+        });
+
+        debugPrint("[INFO] Sending TTS request...");
+        var body = json.encode({"text": gameQuestion, "voice": "baya"});
+        http.post(
+          Uri.parse("https://93a0-95-165-142-68.ngrok-free.app/predict"),
+          headers: {"Content-Type": "application/json"},
+          body: body,
+        ).then((response) {
+          _playQuestion(response.bodyBytes);
         });
 
         subscription!.cancel();
       });
     });
+  }
+
+  @override
+  void dispose() {
+    ttsPlayer.dispose();
+    super.dispose();
   }
 
   var answerController = TextEditingController();
@@ -205,9 +238,13 @@ class _AnswersState extends State<Answers> {
 
                       if (jsonData["lastanswer"]) {
                         debugPrint("[INFO] Last answer! Waiting...");
-                        setState(() {
-                          Navigator.of(context).pushNamedAndRemoveUntil('/answersend', (route) => false);
-                        });
+                        debugPrint("[DEBUG] ModalRoute: ${ModalRoute.of(context)?.isActive}");
+                        if (ModalRoute.of(context)!.isActive) {
+                          setState(() {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/answersend', (route) => false);
+                          });
+                        }
                         return;
                       }
 
@@ -237,6 +274,16 @@ class _AnswersState extends State<Answers> {
                         setState(() {
                           question = gameQuestion;
                           answerController.text = "";
+                        });
+
+                        debugPrint("[INFO] Sending TTS request...");
+                        var body = json.encode({"text": gameQuestion, "voice": "baya"});
+                        http.post(
+                          Uri.parse("https://93a0-95-165-142-68.ngrok-free.app/predict"),
+                          headers: {"Content-Type": "application/json"},
+                          body: body,
+                        ).then((response) {
+                          _playQuestion(response.bodyBytes);
                         });
 
                         subscriptionQuestion!.cancel();
