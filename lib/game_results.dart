@@ -42,14 +42,20 @@ class GameResultsState extends State<GameResults> {
         )
     );
 
-    final dir1 = Directory('assets/images/game_results/1');
-    final imgs1 = dir1.listSync();
-    final dir2 = Directory('assets/images/game_results/2');
-    final imgs2 = dir2.listSync();
-    final dir3 = Directory('assets/images/game_results/3');
-    final imgs3 = dir3.listSync();
-    final dir4 = Directory('assets/images/game_results/4');
-    var imgs4 = dir4.listSync();
+    // DOES NOT WORK ON ANDROID
+    //final dir1 = Directory('assets/images/game_results/1');
+    //final imgs1 = dir1.listSync();
+    //final dir2 = Directory('assets/images/game_results/2');
+    //final imgs2 = dir2.listSync();
+    //final dir3 = Directory('assets/images/game_results/3');
+    //final imgs3 = dir3.listSync();
+    //final dir4 = Directory('assets/images/game_results/4');
+    //var imgs4 = dir4.listSync();
+    //imgs4.shuffle(_random);
+    final imgs1 = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.png', '9.jpg'];
+    final imgs2 = ['1.jpg', '2.jpg', '3.jpg', 'wojak-big-veiny-brain.png', 'wojak-with-bigger-brain.jpg'];
+    final imgs3 = ['1.jpg', 'wojak-big-brain-thinking-on-computer.png', 'wojak-fat-big-brain-glasses.png', 'wojak-glasses-large-brain.png'];
+    final imgs4 = ['355.png', 'brainet-sofa-chair-brain.jpg', 'brainlet-abacus-2.jpg', 'brainlet-ape.jpg', 'brainlet-approaching-limit.png', 'brainlet-barbell-injury.jpg', 'brainlet-bib.png', 'brainlet-big-chin.png', 'brainlet-bird-bath-brain.jpg', 'brainlet-birdhouse-brain.jpg', 'brainlet-blender-brain.jpg', 'brainlet-bowl-head.png', 'brainlet-brain-cap.png', 'brainlet-brain-hanging.png', 'brainlet-brain-hat.jpg', 'brainlet-brain-magnification-x3000.jpg', 'brainlet-builds-brick-brain.jpg', 'brainlet-campfire-brain.jpg', 'brainlet-carousel-brain.png', 'brainlet-castle-brainlet.jpg', 'brainlet-coconut-head-brain.jpg', 'brainlet-computer-brain-buffering.png', 'brainlet-cracked-skull.png', 'brainlet-creatura.png', 'brainlet-dead-flower.jpg', 'brainlet-deflating-brain.png', 'brainlet-dried-out-long-nose.jpg', 'brainlet-drilling-brain.png', 'brainlet-drool-drowning-small.png', 'brainlet-drool-filled-up.png', 'brainlet-eating-spaghetti-os-soup.png', 'brainlet-emoji-abacus.jpg', 'brainlet-fat-face.jpg', 'brainlet-fat-neck-flat-earth-model.png', 'brainlet-filling-up-brain-with-air.jpg', 'brainlet-flat-earth-model.jpg', 'brainlet-gold-tooth.jpg', 'brainlet-graduating.png', 'brainlet-hammerhead.jpg', 'brainlet-hamster-wheel.jpg', 'brainlet-head-tricycle-riding-brainlet.jpg', 'brainlet-industrial-waste-plant.png', 'brainlet-lighthouse-brain.png', 'brainlet-log-head.jpg', 'brainlet-log-through-forehead.jpg', 'brainlet-melted-face-spinny-hat.jpg', 'brainlet-melted-salvador-dali-clocks.jpg', 'brainlet-mini-hammerhead.png', 'brainlet-mortar-pestle-brain.jpg', 'brainlet-mouse-trap-brain.png', 'brainlet-natural-fish-pond-brain.png', 'brainlet-neet.png', 'brainlet-newtons-cradle.png', 'brainlet-no-head.png', 'brainlet-oil-drill-brain.jpg', 'brainlet-on-computer.jpg', 'brainlet-pepe-bottomless-pit.jpg', 'brainlet-pepecopters.png', 'brainlet-pink-small-brain.png', 'brainlet-pointy-head.jpg', 'brainlet-power-strip.jpg', 'brainlet-reads-book.png', 'brainlet-real-black-hole-equations.jpg', 'brainlet-sips-brainlet-juice.jpg', 'brainlet-slinky-going-down-stairs.png', 'brainlet-small-brain.png', 'brainlet-smart-wojak-mask.jpg', 'brainlet-snoke.png', 'brainlet-snot-taste.png', 'brainlet-spindley-brain.jpg', 'brainlet-spinny-hat.jpg', 'brainlet-split-head.jpg', 'brainlet-sunken-head.jpg', 'brainlet-sunny-island-brain.png', 'brainlet-swingset.png', 'brainlet-tennis-racket-head.png', 'brainlet-titanic-brain.png', 'brainlet-toilet-paper-roll-head.png', 'brainlet-toilet-seat-head.png', 'brainlet-tries-to-put-shape-in-head.png', 'brainlet-uncle.jpg', 'brainlet-unsure-of-brain.png', 'brainlet-wide-eyes.png', 'brainlet-windup-brain.jpg', 'brainlet-wojak-ahh-real-monsters.jpg', 'brainlet-wojak-brain-mask.jpg', 'brainlet-y-head.jpg', 'branlet-blackhole-spacetime.jpg', 'flat,750x,075,f-pad,750x1000,f8f8f8.jpg', 'IMG_20191008_072910.jpg'];
     imgs4.shuffle(_random);
 
     int i = 0;
@@ -58,13 +64,17 @@ class GameResultsState extends State<GameResults> {
       setState(() {
         i++;
         if (i == 1) {
-          currImgName = imgs1[_random.nextInt(imgs1.length)].path;
+          //currImgName = imgs1[_random.nextInt(imgs1.length)].path;
+          currImgName = "assets/images/game_results/1/${imgs1[_random.nextInt(imgs1.length)]}";
         } else if (i == 2) {
-          currImgName = imgs2[_random.nextInt(imgs2.length)].path;
+          //currImgName = imgs2[_random.nextInt(imgs2.length)].path;
+          currImgName = "assets/images/game_results/2/${imgs2[_random.nextInt(imgs2.length)]}";
         } else if (i == 3) {
-          currImgName = imgs3[_random.nextInt(imgs3.length)].path;
+          //currImgName = imgs3[_random.nextInt(imgs3.length)].path;
+          currImgName = "assets/images/game_results/3/${imgs3[_random.nextInt(imgs3.length)]}";
         } else {
-          currImgName = imgs4[i-4].path;
+          //currImgName = imgs4[i-4].path;
+          currImgName = "assets/images/game_results/4/${imgs4[i-4]}";
         }
 
         _players = [..._players, TableRow(
