@@ -7,16 +7,19 @@ import 'package:xo_xo_touch/room.dart';
 import 'package:xo_xo_touch/answers.dart';
 import 'package:xo_xo_touch/authorization.dart';
 import 'package:xo_xo_touch/main_menu.dart';
+import 'package:xo_xo_touch/voting.dart';
 
 class MyApp extends StatelessWidget {
   final Socket requestSocket;
   final Stream<Uint8List> socketStream;
 
   final GlobalKey<RoomState> _roomKey = GlobalKey();
+  final GlobalKey<AnswersState> _answersKey = GlobalKey();
+  final GlobalKey<AnswersEndState> _answersEndKey = GlobalKey();
 
   MyApp(this.requestSocket, this.socketStream, {super.key}) {
     // Listen broadcasts
-    Socket.connect('6.tcp.eu.ngrok.io', 19859).then((socket) {
+    Socket.connect('7.tcp.eu.ngrok.io', 18307).then((socket) {
       debugPrint('[INFO] broadcast client connected: ${socket.remoteAddress.address}:${socket.remotePort}');
       socket.listen((List<int> event) {
         var data = utf8.decode(event).replaceAll("\n", "");
@@ -34,11 +37,23 @@ class MyApp extends StatelessWidget {
             Navigator.of(_roomKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
             break;
           case "everyoneanswered":
-            debugPrint("everyoneanswered!!!");
-            // Navigator.of(_roomKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
+            if (_answersEndKey.currentContext == null) {
+              Navigator.of(_answersKey.currentContext!)
+                  .pushNamedAndRemoveUntil('/voting', (route) => false);
+            } else {
+              Navigator.of(_answersEndKey.currentContext!)
+                  .pushNamedAndRemoveUntil('/voting', (route) => false);
+            }
+            break;
+          case "newduelvotingstarted":
+            // TODO: create _duelResultKey
+            // Navigator.of(_answersEndKey.currentContext!)
+            //     .pushNamedAndRemoveUntil('/voting', (route) => false);
+            break;
+          case "duelvotingended":
+            // Add votes and nicknames in voting widget
             break;
         }
-        // question.value = data;
       }, onDone: () {
         debugPrint("[WARN] broadcast connection closed");
         socket.destroy();
@@ -62,8 +77,9 @@ class MyApp extends StatelessWidget {
             return Room(roomUsernames, key: _roomKey);
           },
           '/profile': (context) => const Placeholder(),
-          '/answers': (context) => Answers(requestSocket, socketStream),
-          '/answersend': (context) => const AnswersEnd(),
+          '/answers': (context) => Answers(requestSocket, socketStream, key: _answersKey),
+          '/answersend': (context) => AnswersEnd(key: _answersEndKey),
+          '/voting': (context) => Voting(requestSocket, socketStream),
           '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
               socketStream: socketStream)
         }
