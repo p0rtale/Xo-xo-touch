@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:xo_xo_touch/error_notifier.dart';
+
 class AuthorizationScreen extends StatefulWidget {
   final Socket? requestSocket;
   final Stream<Uint8List>? socketStream;
@@ -53,7 +55,6 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
         403: "User is already logged in"
       };
 
-      String requestStr;
       if (registerOrLogin) {
         userData["method"] = "register";
       } else {
@@ -70,16 +71,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
 
         if (jsonData["status"] != 200) { // ERROR!
           debugPrint("request failed, status: ${jsonData["status"]}");
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                'Error: ${errorMess[jsonData["status"]]}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-            ),
-            backgroundColor: Colors.red.shade300,
-          ));
+          createErrorNotifier(context, errorMess[jsonData["status"]]!);
         } else { // EVERYTHING IS OK!
           String jwtToken = jsonDecode(data)["token"];
           widget.storage.write(key: 'jwtToken', value: jwtToken);
@@ -173,7 +165,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           registerOrLoginUser(true);
                         },
                         style: ElevatedButton.styleFrom(
-                            primary: Colors.indigo,
+                            backgroundColor: Colors.indigo,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(
@@ -196,7 +188,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           registerOrLoginUser(false);
                         },
                         style: ElevatedButton.styleFrom(
-                            primary: Colors.white70,
+                            backgroundColor: Colors.white70,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(
