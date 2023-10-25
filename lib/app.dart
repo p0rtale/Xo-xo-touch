@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   final Stream<Uint8List> socketStream;
 
   final GlobalKey<RoomState> _roomKey = GlobalKey();
+  final GlobalKey<VotingState> _votingKey = GlobalKey();
   final GlobalKey<AnswersState> _answersKey = GlobalKey();
   final GlobalKey<AnswersEndState> _answersEndKey = GlobalKey();
 
@@ -51,7 +52,8 @@ class MyApp extends StatelessWidget {
             //     .pushNamedAndRemoveUntil('/voting', (route) => false);
             break;
           case "duelvotingended":
-            // Add votes and nicknames in voting widget
+            var username = jsonData["username"];
+            _votingKey.currentState!.getDuelResults();
             break;
         }
       }, onDone: () {

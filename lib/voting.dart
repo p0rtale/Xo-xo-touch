@@ -18,15 +18,17 @@ class Voting extends StatefulWidget {
   const Voting(this.requestSocket, this.socketStream, {super.key});
 
   @override
-  State<Voting> createState() => _VotingState();
+  State<Voting> createState() => VotingState();
 }
 
-class _VotingState extends State<Voting> {
+class VotingState extends State<Voting> {
   final storage = const FlutterSecureStorage();
 
   String question = "Когда пациент раздевается, реально плохой врач говорит:";
-  String answerFirst = "A ГДЕ ТВОИ СИСЬКИ?";
-  String answerSecond = "ВЫ УЖЕ ВСЁ?";
+  List<Widget> answerFirstButtonText = [];
+  List<Widget> answerSecondButtonText = [];
+  List<Widget> _votesFor0 = [];
+  List<Widget> _votesFor1 = [];
 
   bool isAnswered = false;
 
@@ -38,9 +40,101 @@ class _VotingState extends State<Voting> {
     await ttsPlayer.play();
   }
 
+  void getDuelResults() {
+    const styleNicknameText = TextStyle(
+      fontSize: 15.0,
+      color: Color.fromRGBO(189, 215, 255, 1.0),
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Mferriweather',
+    );
+    Color nicknameContainerColor = const Color.fromRGBO(161, 30, 159, 1.0);
+
+    final token = storage.read(key: "jwtToken");
+    token.then((token) {
+      debugPrint("[INFO] Get duel token: $token");
+
+      if (token == null) {
+        debugPrint("[INFO] Get duel No jwtToken");
+        return;
+      }
+
+      var request = {
+        "method": "getduelresult",
+        "token": token,
+      };
+      var jsonRequest = jsonEncode(request);
+      widget.requestSocket.add(utf8.encode("$jsonRequest\n"));
+
+      StreamSubscription? subscription;
+      subscription = widget.socketStream.listen((event) {
+        var data = utf8.decode(event).replaceAll("\n", "");
+        var jsonData = jsonDecode(data);
+        debugPrint("[DEBUG] Get duel jsonData: $jsonData");
+        var status = jsonData["status"];
+
+        if (status != 200) {
+          debugPrint("[WARN] Get duel bad status: $status");
+          return;
+        }
+
+        var answers = jsonData["answers"];
+        List<String> votesFor0Tmp = answers[4];
+        List<String> votesFor1Tmp = answers[5];
+        String usernameFirstTmp = answers[3][0];
+        String usernameSecondTmp = answers[3][1];
+
+        setState(() {
+          answerFirstButtonText = [
+            answerFirstButtonText[0],
+            Text(usernameFirstTmp, style: styleNicknameText),
+          ];
+          answerSecondButtonText = [
+            answerSecondButtonText[0],
+            Text(usernameSecondTmp, style: styleNicknameText),
+          ];
+
+          for (String nickname in votesFor0Tmp) {
+            _votesFor0 = [..._votesFor0, Container(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: 5
+              ),
+              decoration: BoxDecoration(
+                color: nicknameContainerColor,
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              child: Text(nickname, style: styleNicknameText),
+            )];
+          }
+          for (String nickname in votesFor1Tmp) {
+            _votesFor1 = [..._votesFor1, Container(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: 5
+              ),
+              decoration: BoxDecoration(
+                color: nicknameContainerColor,
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+              ),
+              child: Text(nickname, style: styleNicknameText),
+            )];
+          }
+        });
+        subscription!.cancel();
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+
+    const styleAnswerText = TextStyle(
+      fontSize: 25.0,
+      color: Color.fromRGBO(10, 7, 94, 1.0),
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Mferriweather',
+    );
 
     final token = storage.read(key: "jwtToken");
     token.then((token) {
@@ -79,13 +173,13 @@ class _VotingState extends State<Voting> {
 
         setState(() {
           question = questionTmp;
-          answerFirst = answerFirstTmp;
-          answerSecond = answerSecondTmp;
+          answerFirstButtonText = [Text(answerFirstTmp, style: styleAnswerText)];
+          answerSecondButtonText = [Text(answerSecondTmp, style: styleAnswerText)];
         });
 
         debugPrint("[INFO] Sending TTS request...");
         var body = json.encode({
-          "text": "Вопрос: $question. Ответ первого игрока: $answerFirst. Ответ второго игрока: $answerSecond",
+          "text": "Вопрос: $question. Ответ первого игрока: $answerFirstTmp. Ответ второго игрока: $answerSecondTmp",
           "voice": "baya",
         });
         http.post(
@@ -117,13 +211,6 @@ class _VotingState extends State<Voting> {
       fontFamily: 'Mferriweather',
     );
 
-    const styleAnswerText = TextStyle(
-      fontSize: 25.0,
-      color: Color.fromRGBO(10, 7, 94, 1.0),
-      fontWeight: FontWeight.bold,
-      fontFamily: 'Mferriweather',
-    );
-
     Color answerContainerColor = const Color.fromRGBO(102, 151, 227, 1.0);
 
     return Scaffold(
@@ -134,25 +221,25 @@ class _VotingState extends State<Voting> {
         title: const Text("XO-XO-TOUCH", style: styleXoxotouch),
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-          Container(
-            decoration: const BoxDecoration(
+          FractionallySizedBox(
+            widthFactor: 0.9,
+            child: Container(
+              decoration: const BoxDecoration(
                 color: Color.fromRGBO(110, 51, 203, 1.0),
-            ),
-            // margin: const EdgeInsets.only(left: 10.0, right: 10.0),
-            padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
+              ),
+              padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
               child: Text(
                 question,
                 style: styleQuestionText,
                 textAlign: TextAlign.center,
               ),
-            ),
+            )
           ),
-          SizedBox(height: MediaQuery.of(context).size.height * 0.17),
-          Container(
+          Flexible(flex: 5, child: Container()),
+          Flexible(flex: 0, child: Container(
             alignment: Alignment.topCenter,
             child: FractionallySizedBox(
               widthFactor: 0.9,
@@ -210,12 +297,25 @@ class _VotingState extends State<Voting> {
                     ),
                   ),
                 ),
-                child: Text(answerFirst, style: styleAnswerText),
+                child: Column(
+                  children: answerFirstButtonText
+                ),
               ),
             ),
-          ),
-          SizedBox(height: MediaQuery.of(context).size.height * 0.17),
-          Container(
+          )),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Flexible(flex: 10, fit: FlexFit.loose, child: Container(
+            alignment: Alignment.topCenter,
+            child: FractionallySizedBox(
+              widthFactor: 0.9,
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: _votesFor0,
+              ),
+            ),
+          )),
+          Flexible(flex: 0, child: Container(
             alignment: Alignment.topCenter,
             child: FractionallySizedBox(
               widthFactor: 0.9,
@@ -273,75 +373,24 @@ class _VotingState extends State<Voting> {
                     ),
                   ),
                 ),
-                child: Text(answerSecond, style: styleAnswerText),
+                child: Column(
+                    children: answerSecondButtonText
+                ),
               ),
             ),
-          ),
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: answerContainerColor,
-          //   ),
-          //   margin: const EdgeInsets.only(left: 25, right: 25.0),
-          //   padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
-          //   child: const Text(
-          //     "Очень смешной ответ первого игрока на вопрос",
-          //     style: styleAnswerText,
-          //     textAlign: TextAlign.center,
-          //   ),
-          // ),
-          // const SizedBox(height: 30),
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: answerContainerColor,
-          //   ),
-          //   margin: const EdgeInsets.only(left: 25, right: 25.0),
-          //   padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
-          //   child: const Text(
-          //     "Отстойный ответ второго игрока на вопрос",
-          //     style: styleAnswerText,
-          //     textAlign: TextAlign.center,
-          //   ),
-          // ),
-          // Container(
-          //   alignment: Alignment.topCenter,
-          //   child: FractionallySizedBox(
-          //     widthFactor: 0.9,
-          //     child: TextField(
-          //       controller: answerController,
-          //       style: styleInput,
-          //       decoration: InputDecoration(
-          //         filled: true,
-          //         fillColor: Colors.white,
-          //         border: const OutlineInputBorder(),
-          //         hintStyle: styleInput.copyWith(color: Colors.black.withOpacity(0.3)),
-          //         hintText: "ТВОЙ ОТВЕТ",
-          //       ),
-          //       onChanged: (text) {
-          //         answerController.text = text;
-          //       },
-          //     ),
-          //   ),
-          // ),
-          // const SizedBox(height: 30),
-          // Container(
-          //   alignment: Alignment.topCenter,
-          //   child: FractionallySizedBox(
-          //     widthFactor: 0.9,
-          //     child: ElevatedButton(
-          //       onPressed: () {},
-          //       style: ButtonStyle(
-          //         padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(20)),
-          //         backgroundColor: const MaterialStatePropertyAll<Color>(Color.fromRGBO(115, 62, 224, 1.0)),
-          //         shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-          //           RoundedRectangleBorder(
-          //             borderRadius: BorderRadius.circular(10.0),
-          //           ),
-          //         ),
-          //       ),
-          //       child: const Text("Ответить", style: styleInput),
-          //     ),
-          //   ),
-          // ),
+          )),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Flexible(flex: 10, child: Container(
+            alignment: Alignment.topCenter,
+            child: FractionallySizedBox(
+              widthFactor: 0.9,
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: _votesFor1,
+              ),
+            ),
+          )),
         ],
       ),
     );
