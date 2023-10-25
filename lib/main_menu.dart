@@ -74,14 +74,16 @@ class MainMenu extends StatelessWidget {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(255, 0, 0, 1),
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(24),
+                  foregroundColor: Theme.of(context).colorScheme.onBackground,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  padding: const EdgeInsets.all(0),
                 ),
-                child: const Text('Boop', style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                )),
+                child: Image.asset(
+                  "assets/images/red_nose.png",
+                  alignment: Alignment.center,
+                  fit: BoxFit.fill,
+                ),
               ),
             ),
           ),
