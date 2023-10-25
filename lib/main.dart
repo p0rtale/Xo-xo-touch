@@ -9,7 +9,7 @@ import 'package:xo_xo_touch/app.dart';
 
 Future<void> main() async {
   // Establish a connection for requests to the server
-  Socket requestSocket = await Socket.connect('7.tcp.eu.ngrok.io', 10603);
+  Socket requestSocket = await Socket.connect('5.tcp.eu.ngrok.io', 16103);
   Stream<Uint8List> socketStream = requestSocket.asBroadcastStream();
   debugPrint('[INFO] request client connected: ${requestSocket.remoteAddress.address}:${requestSocket.remotePort}');
 
