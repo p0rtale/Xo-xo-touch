@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
+
+import 'package:http/http.dart' as http;
 
 class Room extends StatefulWidget {
   final List<dynamic> roomUsernames;
@@ -26,10 +31,20 @@ class RoomState extends State<Room> {
     fontFamily: 'Merriweather',
   );
 
-  final AudioPlayer player = AudioPlayer();
+  final AudioPlayer musicPlayer = AudioPlayer();
+  final AudioPlayer ttsPlayer = AudioPlayer();
+
   List<Widget> _players = [];
 
-  void addPlayer(String nickname) {
+  Future<void> _playNewPlayer(Uint8List bytes) async {
+    Uint8List audioBytes = bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+    await ttsPlayer.stop();
+    await ttsPlayer.setAudioSource(AudioSource.uri(Uri.dataFromBytes(audioBytes, mimeType: "audio/wav")));
+    await ttsPlayer.setVolume(1.0);
+    await ttsPlayer.play();
+  }
+
+  Future<void> addPlayer(String nickname) async {
     setState(() {
       _players = [..._players, Card(
         child: ListTile(
@@ -37,6 +52,16 @@ class RoomState extends State<Room> {
           title: Text(nickname, style: styleNickname),
         ),
       )];
+    });
+
+    debugPrint("[INFO] Sending TTS request...");
+    var body = json.encode({"text": "$nickname зашёл в комнату ожидания", "voice": "ruslan"});
+    http.post(
+      Uri.parse("https://93a0-95-165-142-68.ngrok-free.app/predict"),
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    ).then((response) {
+      _playNewPlayer(response.bodyBytes);
     });
   }
 
@@ -65,13 +90,14 @@ class RoomState extends State<Room> {
 
   Future<void> _init() async {
     // Problem with Linux
-    await player.setAsset("assets/audios/Paradox_Interactive_-_Dunka_Dunka.mp3");
-    await player.play();
+    await musicPlayer.setAsset("assets/audios/Paradox_Interactive_-_Dunka_Dunka.mp3");
+    await musicPlayer.play();
   }
 
   @override
   void dispose() {
-    player.dispose();
+    musicPlayer.dispose();
+    ttsPlayer.dispose();
     super.dispose();
   }
 
