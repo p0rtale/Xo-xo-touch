@@ -88,7 +88,19 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: Colors.white30,
+      appBar: AppBar(
+        backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
+        centerTitle: true,
+        title: const Text("Аутентификация", style: TextStyle(
+            fontSize: 30.0,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Merriweather',
+          )
+        ),
+        automaticallyImplyLeading: false,
+      ),
+      backgroundColor: const Color.fromRGBO(69, 8, 160, 1.0),
       body: Form(
         key: _formKey,
         child: SizedBox(
@@ -100,7 +112,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
               width: size.width * 0.85,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               decoration: BoxDecoration(
-                color: Colors.white70,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: SingleChildScrollView(
@@ -108,6 +120,10 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     TextFormField(
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Merriweather',
+                      ),
                       controller: loginController,
                       validator: (value) {
                         if (value!.isEmpty) {
@@ -127,6 +143,10 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                     ),
                     SizedBox(height: size.height * 0.03),
                     TextFormField(
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Merriweather',
+                      ),
                       obscureText: !_showPassword,
                       controller: passwordController,
                       validator: (String? value) {
@@ -148,7 +168,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                             _showPassword
                                 ? Icons.visibility
                                 : Icons.visibility_off,
-                            color: Colors.grey,
+                            color: Colors.black,
                           ),
                         ),
                         isDense: true,
@@ -165,7 +185,8 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           registerOrLoginUser(true);
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
+                            backgroundColor: const Color.fromRGBO(
+                                69, 8, 160, 1.0),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(
@@ -175,7 +196,8 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white70
+                              color: Colors.white,
+                              fontFamily: 'Merriweather',
                           ),
                         ),
                       ),
@@ -188,7 +210,8 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           registerOrLoginUser(false);
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white70,
+                            backgroundColor: const Color.fromRGBO(
+                                215, 178, 255, 1.0),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(
@@ -198,7 +221,8 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.indigo
+                              color: Color.fromRGBO(69, 8, 160, 1.0),
+                              fontFamily: 'Merriweather',
                           ),
                         ),
                       ),
