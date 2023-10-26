@@ -123,7 +123,7 @@ class AnswersState extends State<Answers> {
         debugPrint("[INFO] Sending TTS request...");
         var body = json.encode({"text": gameQuestion, "voice": "baya"});
         http.post(
-          Uri.parse("https://93a0-95-165-142-68.ngrok-free.app/predict"),
+          Uri.parse("https://22f4-5-142-47-47.ngrok-free.app/predict"),
           headers: {"Content-Type": "application/json"},
           body: body,
         ).then((response) {
@@ -279,7 +279,7 @@ class AnswersState extends State<Answers> {
                         debugPrint("[INFO] Sending TTS request...");
                         var body = json.encode({"text": gameQuestion, "voice": "baya"});
                         http.post(
-                          Uri.parse("https://93a0-95-165-142-68.ngrok-free.app/predict"),
+                          Uri.parse("https://22f4-5-142-47-47.ngrok-free.app/predict"),
                           headers: {"Content-Type": "application/json"},
                           body: body,
                         ).then((response) {
