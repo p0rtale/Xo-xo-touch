@@ -7,6 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 
+import 'package:http/http.dart' as http;
+
 class GameResults extends StatefulWidget {
   final Socket requestSocket;
   final Stream<Uint8List> socketStream;
@@ -35,10 +37,19 @@ class GameResultsState extends State<GameResults> {
   );
 
   final _random = Random();
-  final AudioPlayer player = AudioPlayer();
+
+  final AudioPlayer musicPlayer = AudioPlayer();
+  final AudioPlayer ttsPlayer = AudioPlayer();
+
   List<TableRow> _players = [];
 
   Map<String, int> roomUsersPoints = {};
+
+  Future<void> _playText(Uint8List bytes) async {
+    Uint8List audioBytes = bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+    await ttsPlayer.setAudioSource(AudioSource.uri(Uri.dataFromBytes(audioBytes, mimeType: "audio/wav")));
+    await ttsPlayer.play();
+  }
 
   @override
   void initState() {
@@ -99,8 +110,13 @@ class GameResultsState extends State<GameResults> {
 
         int i = 0;
         String currImgName = "";
+        String bestPlayerUsername = "";
         sortedRoomUserPoints.forEach((username, userpoints) =>
             setState(() {
+              if (bestPlayerUsername == "") {
+                bestPlayerUsername = username;
+              }
+
               i++;
               if (i == 1) {
                 //currImgName = imgs1[_random.nextInt(imgs1.length)].path;
@@ -141,6 +157,19 @@ class GameResultsState extends State<GameResults> {
             })
         );
 
+        debugPrint("[INFO] Sending TTS request...");
+        var body = json.encode({
+          "text": "Поздравляем $bestPlayerUsername со званием лучшего клоуна!",
+          "voice": "ruslan",
+        });
+        http.post(
+          Uri.parse("https://793c-5-142-47-47.ngrok-free.app/predict"),
+          headers: {"Content-Type": "application/json"},
+          body: body,
+        ).then((response) {
+          _playText(response.bodyBytes);
+        });
+
         subscription!.cancel();
       });
     });
@@ -148,14 +177,14 @@ class GameResultsState extends State<GameResults> {
 
   Future<void> _init() async {
     // Problem with Linux
-    await player.setAsset("assets/audios/results.mp3");
-    await player.setLoopMode(LoopMode.all);
-    await player.play();
+    await musicPlayer.setAsset("assets/audios/results.mp3");
+    await musicPlayer.play();
   }
 
   @override
   void dispose() {
-    player.dispose();
+    musicPlayer.dispose();
+    ttsPlayer.dispose();
     super.dispose();
   }
 

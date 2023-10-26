@@ -57,7 +57,7 @@ class RoomState extends State<Room> {
     debugPrint("[INFO] Sending TTS request...");
     var body = json.encode({"text": "$nickname зашёл в комнату ожидания", "voice": "ruslan"});
     http.post(
-      Uri.parse("https://22f4-5-142-47-47.ngrok-free.app/predict"),
+      Uri.parse("https://793c-5-142-47-47.ngrok-free.app/predict"),
       headers: {"Content-Type": "application/json"},
       body: body,
     ).then((response) {

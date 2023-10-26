@@ -208,7 +208,7 @@ class VotingState extends State<Voting> {
           "voice": "baya",
         });
         http.post(
-          Uri.parse("https://22f4-5-142-47-47.ngrok-free.app/predict"),
+          Uri.parse("https://793c-5-142-47-47.ngrok-free.app/predict"),
           headers: {"Content-Type": "application/json"},
           body: body,
         ).then((response) {
