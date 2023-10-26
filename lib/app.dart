@@ -52,7 +52,6 @@ class MyApp extends StatelessWidget {
             //     .pushNamedAndRemoveUntil('/voting', (route) => false);
             break;
           case "duelvotingended":
-            var username = jsonData["username"];
             _votingKey.currentState!.getDuelResults();
             break;
         }
@@ -81,7 +80,7 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => const Placeholder(),
           '/answers': (context) => Answers(requestSocket, socketStream, key: _answersKey),
           '/answersend': (context) => AnswersEnd(key: _answersEndKey),
-          '/voting': (context) => Voting(requestSocket, socketStream),
+          '/voting': (context) => Voting(requestSocket, socketStream, key: _votingKey),
           '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
               socketStream: socketStream)
         }
