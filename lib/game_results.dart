@@ -160,7 +160,7 @@ class GameResultsState extends State<GameResults> {
         debugPrint("[INFO] Sending TTS request...");
         var body = json.encode({
           "text": "Поздравляем $bestPlayerUsername со званием лучшего клоуна!",
-          "voice": "ruslan",
+          "voice": "baya",
         });
         http.post(
           Uri.parse("https://793c-5-142-47-47.ngrok-free.app/predict"),
