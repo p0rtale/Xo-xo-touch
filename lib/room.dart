@@ -91,6 +91,7 @@ class RoomState extends State<Room> {
   Future<void> _init() async {
     // Problem with Linux
     await musicPlayer.setAsset("assets/audios/Paradox_Interactive_-_Dunka_Dunka.mp3");
+    await musicPlayer.setLoopMode(LoopMode.all);
     await musicPlayer.play();
   }
 

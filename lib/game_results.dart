@@ -149,6 +149,7 @@ class GameResultsState extends State<GameResults> {
   Future<void> _init() async {
     // Problem with Linux
     await player.setAsset("assets/audios/results.mp3");
+    await player.setLoopMode(LoopMode.all);
     await player.play();
   }
 
