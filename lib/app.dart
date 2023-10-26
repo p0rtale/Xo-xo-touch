@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
             Navigator.of(_gameResultsKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
             break;
           case "gameended":
-            Navigator.of(_votingKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
+            Navigator.of(_gameResultsKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
             break;
         }
       }, onDone: () {
