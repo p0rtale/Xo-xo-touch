@@ -8,18 +8,27 @@ import (
 	"github.com/google/uuid"
 	"io"
 	"log"
+	"math/rand"
 	"net"
+	"strconv"
+	"sync"
 	"time"
 )
 
-const maxUsersCntConst = 5
-const sleepBetweenConst = 2
+const (
+	maxUsersCntConst  = 5
+	sleepBetweenConst = 2
+	portReqConst      = 8081
+	portBrcastConst   = 8082
+)
 
 const (
-	StatusOk           = 200
-	ErrAlreadyd        = 409
-	ErrInvalidData     = 401
-	ErrAlreadyLoggedIn = 403
+	StatusOk              = 200
+	ErrAlreadyd           = 409
+	ErrInvalidData        = 401
+	ErrAlreadyLoggedIn    = 403
+	ErrMethodIsNotAllowed = 405
+	ErrNotAcceptable      = 406
 )
 
 type User struct {
@@ -29,6 +38,7 @@ type User struct {
 }
 
 type Session struct {
+	Mutex      *sync.Mutex
 	UserId     string
 	ConnReq    net.Conn
 	ConnBrcast net.Conn
@@ -43,19 +53,23 @@ type Duel struct {
 }
 
 type Game struct {
-	GameId        int64
-	Sessions      map[string]*Session // userId -> session
-	IsGameStarted bool
-	Duels         []*Duel
-	QuestionNum   map[string]int64 // userId -> questionNum
-	IsVoted       map[string]bool  // userId -> isVoted
-	DuelNum       int64
-	MaxUsersCnt   int64
-	RoundNum      int64
+	GameId           int64
+	Sessions         map[string]*Session // userId -> session
+	IsGameStarted    bool
+	Duels            []*Duel
+	QuestionNum      map[string]int64 // userId -> questionNum
+	IsVoted          map[string]bool  // userId -> isVoted
+	DuelNum          int64
+	MaxUsersCnt      int64
+	RoundNum         int64
+	EveryoneAnswered bool
+	DuelVotingEnded  bool
+	RoundResult      map[int64]map[string]int64 // roundNum - username -> points
+	GameResult       map[string]int64           // username -> points
 }
 
 type Memory struct {
-	//Mutex    *sync.Mutex
+	Mutex      *sync.Mutex
 	Users      map[string]*User // userId -> user
 	Games      map[int64]*Game  // gameId -> game
 	lastGameId int64
@@ -94,9 +108,35 @@ type ResponseBrcastMessage struct {
 	Message string `json:"message"`
 }
 
+type ResponseQuestion struct {
+	Status   int64  `json:"status"`
+	Question string `json:"question"`
+}
+
+type ResponseDuel struct {
+	Status   int64    `json:"status"`
+	Question string   `json:"question"`
+	Answers  []string `json:"answers"`
+	DuelNum  int64    `json:"duelnum"`
+}
+
+type ResponseDuelResult struct {
+	Status    int64    `json:"status"`
+	Question  string   `json:"question"`
+	Usernames []string `json:"usernames"`
+	Answers   []string `json:"answers"`
+	VotesFor0 []string `json:"votesfor0"`
+	VotesFor1 []string `json:"votesfor1"`
+}
+
+type ResponseRoundResult struct {
+	Status int64            `json:"status"`
+	Points map[string]int64 `json:"points"`
+}
+
 type UserJWT struct {
 	Username string `json:"username"`
-	UserID   string `json:"id"`
+	UserId   string `json:"id"`
 }
 
 type UserJWTClaims struct {
@@ -107,9 +147,6 @@ type UserJWTClaims struct {
 var tokenSecret = []byte("super secret")
 
 func (mem *Memory) registerHandler(connReq net.Conn, connBrcast net.Conn, data string) {
-	//mem.Mutex.Lock()
-	//defer mem.Mutex.Unlock()
-
 	// Get data
 	u := User{}
 	err := json.Unmarshal([]byte(data), &u)
@@ -118,6 +155,7 @@ func (mem *Memory) registerHandler(connReq net.Conn, connBrcast net.Conn, data s
 	}
 
 	// Check if user is already d
+	mem.Mutex.Lock()
 	for _, v := range mem.Users {
 		if u.Username == v.Username {
 			fmt.Println("ERROR This username is already d")
@@ -136,9 +174,11 @@ func (mem *Memory) registerHandler(connReq net.Conn, connBrcast net.Conn, data s
 	// Create user
 	u.UserId = uuid.New().String()
 	mem.Users[u.UserId] = &u
+	mem.Mutex.Unlock()
 
 	// Create session
 	mem.Sessions[u.UserId] = &Session{
+		Mutex:      &sync.Mutex{},
 		ConnReq:    connReq,
 		ConnBrcast: connBrcast,
 		UserId:     u.UserId,
@@ -168,6 +208,7 @@ func (mem *Memory) loginHandler(connReq net.Conn, connBrcast net.Conn, data stri
 	}
 
 	// Check user exists
+	mem.Mutex.Lock()
 	userFound := false
 	for _, v := range mem.Users {
 		if u.Username == v.Username && u.Password == v.Password {
@@ -211,7 +252,9 @@ func (mem *Memory) loginHandler(connReq net.Conn, connBrcast net.Conn, data stri
 			userId = v.UserId
 		}
 	}
+	mem.Mutex.Unlock()
 	mem.Sessions[u.UserId] = &Session{
+		Mutex:      &sync.Mutex{},
 		ConnReq:    connReq,
 		ConnBrcast: connBrcast,
 		UserId:     userId,
@@ -235,7 +278,7 @@ func createToken(userId string, username string) string {
 		jwt.SigningMethodHS256,
 		UserJWTClaims{
 			User: UserJWT{
-				UserID:   userId,
+				UserId:   userId,
 				Username: username,
 			},
 		},
@@ -274,9 +317,10 @@ func (mem *Memory) checkToken(connReq net.Conn, connBrcast net.Conn, data string
 		return nil, fmt.Errorf("no payload")
 	}
 
-	userId := payload.User.UserID
+	userId := payload.User.UserId
 
 	// Если пришел токен, но нет такого юзера (не зарегистрирован или не вошел)
+	mem.Mutex.Lock()
 	if mem.Users[userId] == nil {
 		fmt.Println("ERROR JWT token failed: This user is not logged in")
 		sendData, err := json.Marshal(&ResponseToken{Status: ErrInvalidData})
@@ -289,10 +333,12 @@ func (mem *Memory) checkToken(connReq net.Conn, connBrcast net.Conn, data string
 		}
 		return nil, fmt.Errorf("ERROR JWT token failed: This user is not logged in")
 	}
+	mem.Mutex.Unlock()
 
 	// Если соединение потеряно, но есть верный токен, то создать новую сессию
 	if mem.Sessions[userId] == nil {
 		mem.Sessions[userId] = &Session{
+			Mutex:      &sync.Mutex{},
 			ConnReq:    connReq,
 			ConnBrcast: connBrcast,
 			UserId:     userId,
@@ -309,10 +355,15 @@ func (mem *Memory) getUsernameHandler(connReq net.Conn, connBrcast net.Conn, dat
 		log.Println(err)
 		return
 	}
-	sendData, err := json.Marshal(&ResponseUsername{Status: StatusOk, Username: mem.Users[session.UserId].Username})
+	session.Mutex.Lock()
+	userId := session.UserId
+	session.Mutex.Unlock()
+	mem.Mutex.Lock()
+	sendData, err := json.Marshal(&ResponseUsername{Status: StatusOk, Username: mem.Users[userId].Username})
 	if err != nil {
 		log.Println(err)
 	}
+	mem.Mutex.Unlock()
 	_, err = connReq.Write(sendData)
 	if err != nil {
 		log.Println(err)
@@ -325,17 +376,24 @@ func (mem *Memory) enterGameHandler(connReq net.Conn, connBrcast net.Conn, data 
 		log.Println(err)
 		return
 	}
+	session.Mutex.Lock()
+	userId := session.UserId
+	session.Mutex.Unlock()
 
 	if mem.Games[0] == nil {
 		mem.Games[0] = &Game{
-			GameId:        0,
-			Sessions:      map[string]*Session{},
-			IsGameStarted: false,
-			QuestionNum:   map[string]int64{},
-			IsVoted:       map[string]bool{},
-			DuelNum:       0,
-			MaxUsersCnt:   maxUsersCntConst,
-			RoundNum:      0,
+			GameId:           0,
+			Sessions:         map[string]*Session{},
+			IsGameStarted:    false,
+			QuestionNum:      map[string]int64{},
+			IsVoted:          map[string]bool{},
+			DuelNum:          0,
+			MaxUsersCnt:      maxUsersCntConst,
+			RoundNum:         0,
+			EveryoneAnswered: false,
+			DuelVotingEnded:  false,
+			RoundResult:      map[int64]map[string]int64{},
+			GameResult:       map[string]int64{},
 		}
 	}
 
@@ -352,35 +410,43 @@ func (mem *Memory) enterGameHandler(connReq net.Conn, connBrcast net.Conn, data 
 	usersCnt := int64(len(lastGame.Sessions))
 	maxUsersCnt := mem.Games[session.GameId].MaxUsersCnt
 	// [0 в комнате] Предыдущая комната начала игру -> Создать новую игру
+	fmt.Println(usersCnt, "VS", maxUsersCnt)
 	if usersCnt == maxUsersCnt {
 		mem.lastGameId += 1
 		session.GameId = mem.lastGameId
 		mem.Games[mem.lastGameId] = &Game{
-			GameId:        mem.lastGameId,
-			IsGameStarted: false,
-			QuestionNum:   map[string]int64{},
-			IsVoted:       map[string]bool{},
-			DuelNum:       0,
-			MaxUsersCnt:   maxUsersCntConst,
-			RoundNum:      0,
+			GameId:           mem.lastGameId,
+			Sessions:         map[string]*Session{},
+			IsGameStarted:    false,
+			QuestionNum:      map[string]int64{},
+			IsVoted:          map[string]bool{},
+			DuelNum:          0,
+			MaxUsersCnt:      maxUsersCntConst,
+			RoundNum:         0,
+			EveryoneAnswered: false,
+			DuelVotingEnded:  false,
+			RoundResult:      map[int64]map[string]int64{},
+			GameResult:       map[string]int64{},
 		}
 	}
 
 	// [0-2 из 3 в комнате]
 	// Разослать всем имя нового игрока
 	usernamesIn := []string{}
-	for _, s := range lastGame.Sessions {
-		username := mem.Users[session.UserId].Username
+	for _, sess := range lastGame.Sessions {
+		mem.Mutex.Lock()
+		username := mem.Users[userId].Username
 		sendData, err := json.Marshal(&ResponseNewPlayer{Message: "newplayer", Username: username})
 		if err != nil {
 			log.Println(err)
 		}
 		//sendData = append(sendData, []byte("\n")...)
-		_, err = s.ConnBrcast.Write(sendData)
+		_, err = sess.ConnBrcast.Write(sendData)
 		if err != nil {
 			log.Println(err)
 		}
-		usernamesIn = append(usernamesIn, mem.Users[s.UserId].Username)
+		usernamesIn = append(usernamesIn, mem.Users[sess.UserId].Username)
+		mem.Mutex.Unlock()
 	}
 	// Отослать новому игроку список тех, кто уже в комнате
 	sendData, err := json.Marshal(&ResponseGamePlayers{Status: StatusOk, Usernames: usernamesIn})
@@ -393,14 +459,14 @@ func (mem *Memory) enterGameHandler(connReq net.Conn, connBrcast net.Conn, data 
 		log.Println(err)
 	}
 	// Сохранить сессию нового игрока в эту игру
-	lastGame.Sessions[session.UserId] = session
+	lastGame.Sessions[userId] = session
 	// Заполнить номер дуэли в раунде
-	lastGame.QuestionNum[session.UserId] = 0
+	lastGame.QuestionNum[userId] = 0
 
 	// [2 из 3 в комнате] Начать игру
 	if usersCnt == maxUsersCnt-1 {
 		lastGame.IsGameStarted = true
-		go mem.delayedStartGame(lastGame, session)
+		go mem.delayedStartGame(session)
 	}
 }
 
@@ -435,21 +501,19 @@ func (mem *Memory) sendBroadcastMessage(session *Session, message string) {
 	}
 }
 
-func (mem *Memory) delayedStartGame(lastGame *Game, session *Session) {
-	time.Sleep(3 * time.Second)
-	// Broadcast
-	mem.sendBroadcastMessage(session, "gamestarted")
-
-	// Создание пар (дуэлей)
+func (mem *Memory) generateDuels(session *Session) {
+	game := mem.Games[session.GameId]
 	userIds := []string{}
-	for u := range lastGame.Sessions {
+	for u := range game.Sessions {
 		userIds = append(userIds, u)
 	}
-	//rand.Shuffle(len(userIds), func(i, j int) { userIds[i], userIds[j] = userIds[j], userIds[i] })
+	rand.Shuffle(len(userIds), func(i, j int) { userIds[i], userIds[j] = userIds[j], userIds[i] })
 	q := int64(0)
 	for i := range userIds {
+		mem.Mutex.Lock()
 		username1 := mem.Users[userIds[i]].Username
 		username2 := mem.Users[userIds[(i+1)%len(userIds)]].Username
+		mem.Mutex.Unlock()
 		duel := &Duel{
 			Question:  questions[q],
 			Usernames: []string{username1, username2},
@@ -457,8 +521,14 @@ func (mem *Memory) delayedStartGame(lastGame *Game, session *Session) {
 			Votes:     map[int64][]string{},
 		}
 		q += 1
-		lastGame.Duels = append(lastGame.Duels, duel)
+		game.Duels = append(game.Duels, duel)
 	}
+}
+
+func (mem *Memory) delayedStartGame(session *Session) {
+	time.Sleep(3 * time.Second)
+	mem.sendBroadcastMessage(session, "gamestarted")
+	mem.generateDuels(session)
 }
 
 func getDuelsByUsername(username string, game *Game) []*Duel {
@@ -480,13 +550,15 @@ func (mem *Memory) getQuestionHandler(connReq net.Conn, connBrcast net.Conn, dat
 	}
 
 	game := mem.Games[session.GameId]
-	duels := getDuelsByUsername(mem.Users[session.UserId].Username, game)
-	sendData, err := json.Marshal(&struct {
-		Status   int64  `json:"status"`
-		Question string `json:"question"`
-	}{
+	session.Mutex.Lock()
+	userId := session.UserId
+	session.Mutex.Unlock()
+	mem.Mutex.Lock()
+	duels := getDuelsByUsername(mem.Users[userId].Username, game)
+	mem.Mutex.Unlock()
+	sendData, err := json.Marshal(&ResponseQuestion{
 		Status:   StatusOk,
-		Question: duels[game.QuestionNum[session.UserId]].Question,
+		Question: duels[game.QuestionNum[userId]].Question,
 	})
 	if err != nil {
 		log.Println(err)
@@ -526,6 +598,16 @@ func (mem *Memory) saveAnswerHandler(connReq net.Conn, connBrcast net.Conn, data
 	if err != nil {
 		fmt.Println(err)
 	}
+	session.Mutex.Lock()
+	userId := session.UserId
+	session.Mutex.Unlock()
+	game := mem.Games[session.GameId]
+
+	// Нельзя голосовать за оба ответа
+	if game.IsVoted[userId] {
+		sendStatus(connReq, ErrNotAcceptable)
+		return
+	}
 
 	answer := struct {
 		Answer string `json:"answer"`
@@ -537,28 +619,25 @@ func (mem *Memory) saveAnswerHandler(connReq net.Conn, connBrcast net.Conn, data
 		log.Println(err)
 	}
 
-	game := mem.Games[session.GameId]
-	username := mem.Users[session.UserId].Username
+	mem.Mutex.Lock()
+	username := mem.Users[userId].Username
 	duels := getDuelsByUsername(username, game)
-	questionNum := game.QuestionNum[session.UserId]
+	questionNum := game.QuestionNum[userId]
 
+	// Нельзя отвечать больше, чем на два вопроса
 	if questionNum == 2 {
-		sendStatus(connReq, ErrInvalidData)
+		sendStatus(connReq, ErrMethodIsNotAllowed)
+		return
 	}
 
 	//fmt.Println("questionNum =", questionNum)
-	posInDuel := getPosInDuelByUsername(mem.Users[session.UserId].Username, duels[questionNum])
+	posInDuel := getPosInDuelByUsername(mem.Users[userId].Username, duels[questionNum])
+	mem.Mutex.Unlock()
 	fmt.Println("USERNAME =", duels[questionNum].Usernames[posInDuel])
 	duels[questionNum].Answers[posInDuel] = answer.Answer
 	fmt.Println("QUESTION:", duels[questionNum].Question)
 	fmt.Println("ANSWER:", answer.Answer)
 	fmt.Println()
-	//if questionNum == 1 {
-	//	fmt.Println()
-	//	for _, d := range game.Duels {
-	//		fmt.Println("DUELS:", d)
-	//	}
-	//}
 
 	// Ответ клиенту
 	lastAnswer := false
@@ -580,11 +659,11 @@ func (mem *Memory) saveAnswerHandler(connReq net.Conn, connBrcast net.Conn, data
 		log.Println(err)
 	}
 
-	mem.Games[session.GameId].QuestionNum[session.UserId] += 1 // questionNum = ...
+	game.QuestionNum[userId] += 1 // questionNum = ...
 
 	// Броадкаст о том, что все ответили
 	everyoneAnswered := true
-	for _, sess := range mem.Games[session.GameId].Sessions {
+	for _, sess := range game.Sessions {
 		gameIn := mem.Games[sess.GameId]
 		if gameIn.QuestionNum[sess.UserId] != 2 {
 			everyoneAnswered = false
@@ -592,6 +671,7 @@ func (mem *Memory) saveAnswerHandler(connReq net.Conn, connBrcast net.Conn, data
 	}
 	if everyoneAnswered {
 		mem.sendBroadcastMessage(session, "everyoneanswered")
+		game.EveryoneAnswered = true
 		fmt.Println("-------------------------------------------------------")
 	}
 }
@@ -603,23 +683,22 @@ func (mem *Memory) getDuelHandler(connReq net.Conn, connBrcast net.Conn, data st
 	}
 
 	game := mem.Games[session.GameId]
+	// Нельзя голосовать, пока все не ответили на вопросы
+	if !game.EveryoneAnswered {
+		sendStatus(connReq, ErrMethodIsNotAllowed)
+		return
+	}
 	// Нельзя голосовать после конца голосования
 	if game.DuelNum == game.MaxUsersCnt {
-		sendStatus(connReq, ErrInvalidData)
+		sendStatus(connReq, ErrMethodIsNotAllowed)
 		return
 	}
 	duel := game.Duels[game.DuelNum]
 
-	sendData, err := json.Marshal(&struct {
-		Status   int64    `json:"status"`
-		Question string   `json:"question"`
-		Answers  []string `json:"answers"`
-		DuelNum  int64    `json:"duelnum"`
-	}{
+	sendData, err := json.Marshal(&ResponseDuel{
 		Status:   StatusOk,
 		Question: duel.Question,
 		Answers:  duel.Answers,
-		DuelNum:  game.DuelNum,
 	})
 	if err != nil {
 		log.Println(err)
@@ -628,12 +707,6 @@ func (mem *Memory) getDuelHandler(connReq net.Conn, connBrcast net.Conn, data st
 	if err != nil {
 		log.Println(err)
 	}
-
-	//fmt.Println()
-	//for _, d := range mem.Games[session.GameId].Duels {
-	//	fmt.Println("DUELS:", d)
-	//}
-	//fmt.Println()
 }
 
 func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data string) {
@@ -641,19 +714,29 @@ func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data s
 	if err != nil {
 		fmt.Println(err)
 	}
+	session.Mutex.Lock()
+	userId := session.UserId
+	session.Mutex.Unlock()
 
 	game := mem.Games[session.GameId]
+	// Нельзя голосовать, пока все не ответили на вопросы
+	if !game.EveryoneAnswered {
+		sendStatus(connReq, ErrMethodIsNotAllowed)
+		return
+	}
 	// Нельзя голосовать после конца голосования
 	if game.DuelNum == game.MaxUsersCnt {
-		sendStatus(connReq, ErrInvalidData)
+		sendStatus(connReq, ErrMethodIsNotAllowed)
 		return
 	}
 	duel := game.Duels[game.DuelNum]
-	username := mem.Users[session.UserId].Username
+	mem.Mutex.Lock()
+	username := mem.Users[userId].Username
+	mem.Mutex.Unlock()
 
 	// Нельзя голосовать за вопрос, на который ты отвечал
 	if duel.Usernames[0] == username || duel.Usernames[1] == username {
-		sendStatus(connReq, ErrInvalidData)
+		sendStatus(connReq, ErrNotAcceptable)
 		return
 	}
 
@@ -666,14 +749,20 @@ func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data s
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println("USERNAME =", mem.Users[session.UserId].Username)
+	fmt.Println("USERNAME =", username)
 	fmt.Println("DUELNUM =", game.DuelNum)
 	fmt.Println("VOTE =", res.Vote)
 	fmt.Println()
 
 	// Добавляем в список проголосовавших за человека имя проголосовавшего
-	mem.Games[session.GameId].Duels[game.DuelNum].Votes[res.Vote] = append(mem.Games[session.GameId].Duels[game.DuelNum].Votes[res.Vote], mem.Users[session.UserId].Username)
-	mem.Games[session.GameId].IsVoted[session.UserId] = true
+	game.Duels[game.DuelNum].Votes[res.Vote] = append(game.Duels[game.DuelNum].Votes[res.Vote], mem.Users[userId].Username)
+	game.IsVoted[userId] = true
+	// Добавляем голос в результат раунда и игры
+	if game.RoundResult[game.RoundNum] == nil {
+		game.RoundResult[game.RoundNum] = map[string]int64{}
+	}
+	game.RoundResult[game.RoundNum][duel.Usernames[res.Vote]] += 1
+	game.GameResult[duel.Usernames[res.Vote]] += 1
 
 	// Ответ клиенту
 	sendStatus(connReq, StatusOk)
@@ -682,7 +771,10 @@ func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data s
 	duelVotingEnded := true
 	for _, sess := range game.Sessions {
 		gameIn := mem.Games[sess.GameId]
+		mem.Mutex.Lock()
 		usernameIn := mem.Users[sess.UserId].Username
+		mem.Mutex.Unlock()
+
 		if duel.Usernames[0] == usernameIn || duel.Usernames[1] == usernameIn {
 			continue
 		}
@@ -695,6 +787,9 @@ func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data s
 		//fmt.Println()
 	}
 	if duelVotingEnded {
+		mem.sendBroadcastMessage(session, "duelvotingended")
+		time.Sleep(sleepBetweenConst * time.Second)
+
 		//fmt.Println("!!! duelVotingEnded")
 		//fmt.Println()
 		for _, sess := range game.Sessions {
@@ -719,7 +814,6 @@ func (mem *Memory) saveVoteHandler(connReq net.Conn, connBrcast net.Conn, data s
 			}
 			fmt.Println()
 		} else {
-			mem.sendBroadcastMessage(session, "duelvotingended")
 			go mem.broadcastNewDuelVotingStarted(session) // go, чтоб клиент мог показать рез. дуэти
 		}
 	}
@@ -734,10 +828,18 @@ func (mem *Memory) broadcastNewDuelVotingStarted(session *Session) {
 func (mem *Memory) broadcastNewRoundStarted(session *Session) {
 	time.Sleep(sleepBetweenConst * time.Second)
 	mem.sendBroadcastMessage(session, "newroundstarted")
-	mem.Games[session.GameId].RoundNum += 1
+	game := mem.Games[session.GameId]
+	game.RoundNum += 1
+	game.DuelNum = 0
+	game.EveryoneAnswered = false
+	for _, sess := range game.Sessions {
+		mem.Games[sess.GameId].QuestionNum[sess.UserId] = 0
+	}
+	game.Duels = []*Duel{}
+	mem.generateDuels(session)
 }
 
-func (mem *Memory) getDuelResultsHandler(connReq net.Conn, connBrcast net.Conn, data string) {
+func (mem *Memory) getDuelResultHandler(connReq net.Conn, connBrcast net.Conn, data string) {
 	session, err := mem.checkToken(connReq, connBrcast, data)
 	if err != nil {
 		fmt.Println(err)
@@ -746,21 +848,26 @@ func (mem *Memory) getDuelResultsHandler(connReq net.Conn, connBrcast net.Conn, 
 	game := mem.Games[session.GameId]
 	// Нельзя запрашивать результаты, если время на это истекло
 	if game.DuelNum == game.MaxUsersCnt {
-		sendStatus(connReq, ErrInvalidData)
+		sendStatus(connReq, ErrMethodIsNotAllowed)
 		return
 	}
 	duel := game.Duels[game.DuelNum]
 
-	sendData, err := json.Marshal(&struct {
-		Status    int64    `json:"status"`
-		Question  string   `json:"question"`
-		Usernames []string `json:"usernames"`
-		Answers   []string `json:"answers"`
-	}{
+	votesfor0, ok := duel.Votes[0]
+	if !ok {
+		votesfor0 = []string{}
+	}
+	votesfor1, ok := duel.Votes[1]
+	if !ok {
+		votesfor1 = []string{}
+	}
+	sendData, err := json.Marshal(&ResponseDuelResult{
 		Status:    StatusOk,
 		Question:  duel.Question,
 		Usernames: duel.Usernames,
 		Answers:   duel.Answers,
+		VotesFor0: votesfor0,
+		VotesFor1: votesfor1,
 	})
 	if err != nil {
 		log.Println(err)
@@ -769,6 +876,52 @@ func (mem *Memory) getDuelResultsHandler(connReq net.Conn, connBrcast net.Conn, 
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func (mem *Memory) getRoundResultHandler(connReq net.Conn, connBrcast net.Conn, data string) {
+	session, err := mem.checkToken(connReq, connBrcast, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	game := mem.Games[session.GameId]
+	sendData, err := json.Marshal(&ResponseRoundResult{
+		Status: StatusOk,
+		Points: game.RoundResult[game.RoundNum],
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	_, err = connReq.Write(sendData)
+	if err != nil {
+		log.Println(err)
+	}
+
+	fmt.Println("ROUNDRESULT", game.RoundResult[game.RoundNum])
+	fmt.Println()
+}
+
+func (mem *Memory) getGameResultHandler(connReq net.Conn, connBrcast net.Conn, data string) {
+	session, err := mem.checkToken(connReq, connBrcast, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	game := mem.Games[session.GameId]
+	sendData, err := json.Marshal(&ResponseRoundResult{
+		Status: StatusOk,
+		Points: game.GameResult,
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	_, err = connReq.Write(sendData)
+	if err != nil {
+		log.Println(err)
+	}
+
+	fmt.Println("GAMERESULT", game.GameResult)
+	fmt.Println()
 }
 
 func (mem *Memory) newClient(connReq net.Conn, connBrcast net.Conn) {
@@ -809,9 +962,11 @@ func (mem *Memory) newClient(connReq net.Conn, connBrcast net.Conn) {
 		case "savevote":
 			go mem.saveVoteHandler(connReq, connBrcast, data)
 		case "getduelresult":
-			go mem.getDuelResultsHandler(connReq, connBrcast, data)
-			//case "getroundresult":
-			//	go mem.getRoundResultsHandler(connReq, connBrcast, data)
+			go mem.getDuelResultHandler(connReq, connBrcast, data)
+		case "getroundresult":
+			go mem.getRoundResultHandler(connReq, connBrcast, data)
+		case "getgameresult":
+			go mem.getGameResultHandler(connReq, connBrcast, data)
 		}
 	}
 }
@@ -820,17 +975,17 @@ func main() {
 	fmt.Println("Start")
 
 	// Listen port
-	lnReq, err := net.Listen("tcp", ":8081")
+	lnReq, err := net.Listen("tcp", ":"+strconv.Itoa(portReqConst))
 	if err != nil {
 		log.Println(err)
 	}
-	lnBrcast, err := net.Listen("tcp", ":8082")
+	lnBrcast, err := net.Listen("tcp", ":"+strconv.Itoa(portBrcastConst))
 	if err != nil {
 		log.Println(err)
 	}
 
 	mem := &Memory{
-		//Mutex:    &sync.Mutex{},
+		Mutex:      &sync.Mutex{},
 		Users:      map[string]*User{},
 		Sessions:   map[string]*Session{},
 		lastGameId: 0,

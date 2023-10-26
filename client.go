@@ -23,10 +23,10 @@ func catch(err error) {
 const sleepConst = 100
 const sleepBetweenConst = 2
 
-func printRequest(conn net.Conn, reqType string) {
+func printRequest(conn net.Conn, reqType string, token string) {
 	res, err := bufio.NewReader(conn).ReadString('}')
 	catch(err)
-	fmt.Println("Request (" + reqType + "): " + res)
+	fmt.Println("Request " + token[len(token)-3:] + " (" + reqType + "): " + res)
 	time.Sleep(sleepConst * time.Millisecond)
 }
 
@@ -54,7 +54,7 @@ func registerAndEntergame(conn net.Conn, conn2 net.Conn, usernames []string) []s
 
 		// Entergame
 		fmt.Fprintf(conn, "{\"method\": \"entergame\", \"token\": \""+token+"\"}\n")
-		printRequest(conn, "entergame")
+		printRequest(conn, "entergame", token)
 
 		go printBroadcast(conn2)
 	}
@@ -66,11 +66,11 @@ func saveAnswers(conn net.Conn, conn2 net.Conn, tokens []string) {
 		for i, t := range tokens {
 			// Get question
 			fmt.Fprintf(conn, "{\"method\": \"getquestion\", \"token\": \""+t+"\"}\n")
-			printRequest(conn, "getquestion")
+			printRequest(conn, "getquestion", t)
 
 			// Save answer
 			fmt.Fprintf(conn, "{\"method\": \"saveanswer\", \"token\": \""+t+"\", \"answer\": \"ans "+strconv.Itoa(qn)+"."+strconv.Itoa(i)+"!\"}\n")
-			printRequest(conn, "saveanswer")
+			printRequest(conn, "saveanswer", t)
 
 			go printBroadcast(conn2)
 		}
@@ -78,40 +78,59 @@ func saveAnswers(conn net.Conn, conn2 net.Conn, tokens []string) {
 }
 
 func sendVotes(conn net.Conn, conn2 net.Conn, tokens []string) {
-	for i := range tokens {
+	for i, t := range tokens {
 		fmt.Println("----- Voting:", i)
-		for _, t := range tokens {
-			// Get duel
-			fmt.Fprintf(conn, "{\"method\": \"getduel\", \"token\": \""+t+"\"}\n")
-			printRequest(conn, "getduel")
+		// Get duel
+		fmt.Fprintf(conn, "{\"method\": \"getduel\", \"token\": \""+t+"\"}\n")
+		printRequest(conn, "getduel", t)
 
-			// Save vote
-			fmt.Fprintf(conn, "{\"method\": \"savevote\", \"vote\": 1, \"token\": \""+t+"\"}\n")
-			printRequest(conn, "savevote")
-		}
+		// Save vote
+		fmt.Fprintf(conn, "{\"method\": \"savevote\", \"vote\": 1, \"token\": \""+t+"\"}\n")
+		printRequest(conn, "savevote", t)
 
 		go printBroadcast(conn2)
-		fmt.Fprint(conn, "{\"method\": \"getduelresult\", \"token\": \""+tokens[0]+"\"}\n")
-		printRequest(conn, "getduelresult")
-		time.Sleep(sleepBetweenConst * time.Second)
 	}
+
+	//fmt.Fprint(conn, "{\"method\": \"getroundresult\", \"token\": \""+tokens[0]+"\"}\n")
+	//printRequest(conn, "getroundresult")
+}
+
+func getGameResult(conn net.Conn, conn2 net.Conn, tokens []string) {
+	fmt.Fprint(conn, "{\"method\": \"getgameresult\", \"token\": \""+tokens[0]+"\"}\n")
+	printRequest(conn, "getgameresult", tokens[0])
 }
 
 func main() {
 	// Подключаемся к сокету
 	fmt.Println("Start client")
-	conn, err := net.Dial("tcp", "127.0.0.1:8081")
+	connReq, err := net.Dial("tcp", "127.0.0.1:8081")
 	catch(err)
-	conn2, err := net.Dial("tcp", "127.0.0.1:8082")
+	connBrcast, err := net.Dial("tcp", "127.0.0.1:8082")
 	catch(err)
 
-	tokens := registerAndEntergame(conn, conn2, []string{"dovolniy", "Yuriy", "Andrew", "user4", "user5"})
+	tokens := registerAndEntergame(connReq, connBrcast, []string{"dovolniy", "Yuriy", "Andrew", "user4", "user5"})
 	time.Sleep(3 * time.Second)
 
-	saveAnswers(conn, conn2, tokens)
+	// Раунд 1
+	saveAnswers(connReq, connBrcast, tokens)
 
-	sendVotes(conn, conn2, tokens)
+	sendVotes(connReq, connBrcast, tokens)
 
-	printBroadcast(conn2)
+	printBroadcast(connBrcast)
+
+	getGameResult(connReq, connBrcast, tokens)
+
+	_ = registerAndEntergame(connReq, connBrcast, []string{"MOLODOY"})
+
+	time.Sleep(3 * time.Second)
+
+	// Раунд 2
+	saveAnswers(connReq, connBrcast, tokens)
+
+	sendVotes(connReq, connBrcast, tokens)
+
+	printBroadcast(connBrcast)
+
+	getGameResult(connReq, connBrcast, tokens)
 
 }
