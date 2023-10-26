@@ -34,6 +34,9 @@ class VotingState extends State<Voting> {
 
   final AudioPlayer ttsPlayer = AudioPlayer();
 
+  Timer? voteTimer;
+  Duration voteDuration = const Duration(seconds: 0);
+
   Future<void> _playText(Uint8List bytes) async {
     Uint8List audioBytes = bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
     await ttsPlayer.setAudioSource(AudioSource.uri(Uri.dataFromBytes(audioBytes, mimeType: "audio/wav")));
@@ -120,8 +123,25 @@ class VotingState extends State<Voting> {
             )];
           }
         });
+
+        voteDuration = const Duration(seconds: 5);
+        voteTimer!.cancel();
+        voteTimer = Timer.periodic(const Duration(seconds: 1), (_) => setCountDown());
+
         subscription!.cancel();
       });
+    });
+  }
+
+  void setCountDown() {
+    const reduceSecondsBy = 1;
+    setState(() {
+      final seconds = voteDuration.inSeconds - reduceSecondsBy;
+      if (seconds < 0) {
+        voteTimer!.cancel();
+      } else {
+        voteDuration = Duration(seconds: seconds);
+      }
     });
   }
 
@@ -195,6 +215,10 @@ class VotingState extends State<Voting> {
           _playText(response.bodyBytes);
         });
 
+        voteDuration = const Duration(seconds: 20);
+        //voteTimer!.cancel();
+        voteTimer = Timer.periodic(const Duration(seconds: 1), (_) => setCountDown());
+
         subscription!.cancel();
       });
     });
@@ -207,6 +231,13 @@ class VotingState extends State<Voting> {
     debugPrint("[DEBUG] init voting");
 
     initVoiting();
+  }
+
+  @override
+  void dispose() {
+    voteTimer!.cancel();
+    ttsPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -232,7 +263,7 @@ class VotingState extends State<Voting> {
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(53, 20, 108, 1.0),
         centerTitle: true,
-        title: const Text("XO-XO-TOUCH", style: styleXoxotouch),
+        title: Text(voteDuration.inSeconds.toString(), style: styleXoxotouch),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
