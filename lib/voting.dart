@@ -77,11 +77,11 @@ class VotingState extends State<Voting> {
           return;
         }
 
-        var answers = jsonData["answers"];
-        List<String> votesFor0Tmp = answers[4];
-        List<String> votesFor1Tmp = answers[5];
-        String usernameFirstTmp = answers[3][0];
-        String usernameSecondTmp = answers[3][1];
+        var usernames = jsonData["usernames"];
+        List<String> votesFor0Tmp = jsonData["votesfor0"];
+        List<String> votesFor1Tmp = jsonData["votesfor1"];
+        String usernameFirstTmp = usernames[0];
+        String usernameSecondTmp = usernames[1];
 
         setState(() {
           answerFirstButtonText = [
