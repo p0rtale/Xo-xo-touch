@@ -13,10 +13,10 @@ class MyApp extends StatelessWidget {
   final Socket requestSocket;
   final Stream<Uint8List> socketStream;
 
-  final GlobalKey<RoomState> _roomKey = GlobalKey();
-  final GlobalKey<VotingState> _votingKey = GlobalKey();
-  final GlobalKey<AnswersState> _answersKey = GlobalKey();
-  final GlobalKey<AnswersEndState> _answersEndKey = GlobalKey();
+  GlobalKey<RoomState> _roomKey = GlobalKey();
+  GlobalKey<VotingState> _votingKey = GlobalKey();
+  GlobalKey<AnswersState> _answersKey = GlobalKey();
+  GlobalKey<AnswersEndState> _answersEndKey = GlobalKey();
 
   MyApp(this.requestSocket, this.socketStream, {super.key}) {
     // Listen broadcasts
@@ -47,8 +47,11 @@ class MyApp extends StatelessWidget {
             }
             break;
           case "newduelvotingstarted":
-            Navigator.of(_votingKey.currentContext!)
-                .pushNamedAndRemoveUntil('/voting', (route) => false);
+            debugPrint("[DEBUG] start newduelvotingstarted");
+            _votingKey.currentState!.initVoiting();
+            // Navigator.of(_votingKey.currentContext!)
+            //     .pushNamedAndRemoveUntil('/voting', (route) => false);
+            debugPrint("[DEBUG] end newduelvotingstarted");
             break;
           case "duelvotingended":
             _votingKey.currentState!.getDuelResults();

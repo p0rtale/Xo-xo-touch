@@ -78,8 +78,8 @@ class VotingState extends State<Voting> {
         }
 
         var usernames = jsonData["usernames"];
-        List<String> votesFor0Tmp = jsonData["votesfor0"];
-        List<String> votesFor1Tmp = jsonData["votesfor1"];
+        var votesFor0Tmp = jsonData["votesfor0"];
+        var votesFor1Tmp = jsonData["votesfor1"];
         String usernameFirstTmp = usernames[0];
         String usernameSecondTmp = usernames[1];
 
@@ -125,9 +125,14 @@ class VotingState extends State<Voting> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void initVoiting() {
+    question = "";
+    answerFirstButtonText = [];
+    answerSecondButtonText = [];
+    _votesFor0 = [];
+    _votesFor1 = [];
+
+    isAnswered = false;
 
     const styleAnswerText = TextStyle(
       fontSize: 25.0,
@@ -193,6 +198,15 @@ class VotingState extends State<Voting> {
         subscription!.cancel();
       });
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    debugPrint("[DEBUG] init voting");
+
+    initVoiting();
   }
 
   @override
