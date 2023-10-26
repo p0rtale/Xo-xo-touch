@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
   final GlobalKey<VotingState> _votingKey = GlobalKey();
   final GlobalKey<AnswersState> _answersKey = GlobalKey();
   final GlobalKey<AnswersEndState> _answersEndKey = GlobalKey();
+  final GlobalKey<GameResultsState> _gameResultsKey = GlobalKey();
 
   MyApp(this.requestSocket, this.socketStream, {super.key}) {
     // Listen broadcasts
@@ -56,6 +57,9 @@ class MyApp extends StatelessWidget {
           case "roundvotingended":
             Navigator.of(_votingKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
             break;
+          case "newroundstarted":
+            Navigator.of(_gameResultsKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
+            break;
         }
       }, onDone: () {
         debugPrint("[WARN] broadcast connection closed");
@@ -83,7 +87,7 @@ class MyApp extends StatelessWidget {
           '/answers': (context) => Answers(requestSocket, socketStream, key: _answersKey),
           '/answersend': (context) => AnswersEnd(key: _answersEndKey),
           '/voting': (context) => Voting(requestSocket, socketStream, key: _votingKey),
-          '/gameresults': (context) => GameResults(requestSocket, socketStream),
+          '/gameresults': (context) => GameResults(requestSocket, socketStream, key: _gameResultsKey),
           '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
               socketStream: socketStream)
         }
