@@ -78,21 +78,25 @@ func saveAnswers(conn net.Conn, conn2 net.Conn, tokens []string) {
 }
 
 func sendVotes(conn net.Conn, conn2 net.Conn, tokens []string) {
-	for i, t := range tokens {
+	//for i := 0; i < len(tokens) - 2; i++
+	for i := range tokens {
 		fmt.Println("----- Voting:", i)
-		// Get duel
-		fmt.Fprintf(conn, "{\"method\": \"getduel\", \"token\": \""+t+"\"}\n")
-		printRequest(conn, "getduel", t)
+		for _, t := range tokens {
+			// Get duel
+			fmt.Fprintf(conn, "{\"method\": \"getduel\", \"token\": \""+t+"\"}\n")
+			printRequest(conn, "getduel", t)
 
-		// Save vote
-		fmt.Fprintf(conn, "{\"method\": \"savevote\", \"vote\": 1, \"token\": \""+t+"\"}\n")
-		printRequest(conn, "savevote", t)
+			// Save vote
+			fmt.Fprintf(conn, "{\"method\": \"savevote\", \"vote\": 1, \"token\": \""+t+"\"}\n")
+			printRequest(conn, "savevote", t)
+		}
 
 		go printBroadcast(conn2)
+		//time.Sleep(sleepBetweenConst * time.Second)
 	}
 
-	//fmt.Fprint(conn, "{\"method\": \"getroundresult\", \"token\": \""+tokens[0]+"\"}\n")
-	//printRequest(conn, "getroundresult")
+	fmt.Fprint(conn, "{\"method\": \"getroundresult\", \"token\": \""+tokens[0]+"\"}\n")
+	printRequest(conn, "getroundresult", tokens[0])
 }
 
 func getGameResult(conn net.Conn, conn2 net.Conn, tokens []string) {
@@ -111,7 +115,7 @@ func main() {
 	tokens := registerAndEntergame(connReq, connBrcast, []string{"dovolniy", "Yuriy", "Andrew", "user4", "user5"})
 	time.Sleep(3 * time.Second)
 
-	// Раунд 1
+	// Игра 1
 	saveAnswers(connReq, connBrcast, tokens)
 
 	sendVotes(connReq, connBrcast, tokens)
@@ -120,11 +124,12 @@ func main() {
 
 	getGameResult(connReq, connBrcast, tokens)
 
-	_ = registerAndEntergame(connReq, connBrcast, []string{"MOLODOY"})
+	time.Sleep(7 * time.Second)
 
+	tokens = registerAndEntergame(connReq, connBrcast, []string{"MOLODOY", "stariy", "kek", "cheburek", "hohotunchik"})
 	time.Sleep(3 * time.Second)
 
-	// Раунд 2
+	// Игра 2
 	saveAnswers(connReq, connBrcast, tokens)
 
 	sendVotes(connReq, connBrcast, tokens)
