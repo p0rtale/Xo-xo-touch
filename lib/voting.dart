@@ -24,7 +24,7 @@ class Voting extends StatefulWidget {
 class VotingState extends State<Voting> {
   final storage = const FlutterSecureStorage();
 
-  String question = "Когда пациент раздевается, реально плохой врач говорит:";
+  String question = "";
   List<Widget> answerFirstButtonText = [];
   List<Widget> answerSecondButtonText = [];
   List<Widget> _votesFor0 = [];
@@ -179,7 +179,7 @@ class VotingState extends State<Voting> {
 
         debugPrint("[INFO] Sending TTS request...");
         var body = json.encode({
-          "text": "Вопрос: $question. Ответ первого игрока: $answerFirstTmp. Ответ второго игрока: $answerSecondTmp",
+          "text": "Вопрос: $question. Ответ первого игрока: $answerFirstTmp. Ответ второго игрока: $answerSecondTmp.",
           "voice": "baya",
         });
         http.post(
@@ -277,12 +277,12 @@ class VotingState extends State<Voting> {
                       debugPrint("[DEBUG] Save vote jsonData: $jsonData");
                       var status = jsonData["status"];
 
-                      if (status != 200) {
+                      if (status == 200 || status == 406) {
+                        isAnswered = true;
+                      } else {
                         debugPrint("[WARN] Save vote bad status: $status");
                         return;
                       }
-
-                      isAnswered = true;
 
                       subscription!.cancel();
                     });
@@ -353,12 +353,12 @@ class VotingState extends State<Voting> {
                       debugPrint("[DEBUG] Save vote jsonData: $jsonData");
                       var status = jsonData["status"];
 
-                      if (status != 200) {
+                      if (status == 200 || status == 406) {
+                        isAnswered = true;
+                      } else {
                         debugPrint("[WARN] Save vote bad status: $status");
                         return;
                       }
-
-                      isAnswered = true;
 
                       subscription!.cancel();
                     });

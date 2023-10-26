@@ -47,9 +47,8 @@ class MyApp extends StatelessWidget {
             }
             break;
           case "newduelvotingstarted":
-            // TODO: create _duelResultKey
-            // Navigator.of(_answersEndKey.currentContext!)
-            //     .pushNamedAndRemoveUntil('/voting', (route) => false);
+            Navigator.of(_votingKey.currentContext!)
+                .pushNamedAndRemoveUntil('/voting', (route) => false);
             break;
           case "duelvotingended":
             _votingKey.currentState!.getDuelResults();
