@@ -73,7 +73,7 @@ class GameResultsState extends State<GameResults> {
           return;
         }
 
-        roomUsersPoints = jsonData["userspoints"];
+        roomUsersPoints = Map.castFrom(jsonData["points"]);
 
         var sortedRoomUserPoints = Map.fromEntries(
             roomUsersPoints.entries.toList()..sort(

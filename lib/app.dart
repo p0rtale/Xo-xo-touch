@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
             _votingKey.currentState!.getDuelResults();
             break;
           case "roundvotingended":
-            Navigator.of(_roomKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
+            Navigator.of(_votingKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
             break;
         }
       }, onDone: () {
