@@ -60,6 +60,9 @@ class MyApp extends StatelessWidget {
           case "newroundstarted":
             Navigator.of(_gameResultsKey.currentContext!).pushNamedAndRemoveUntil('/answers', (route) => false);
             break;
+          case "gameended":
+            Navigator.of(_votingKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
+            break;
         }
       }, onDone: () {
         debugPrint("[WARN] broadcast connection closed");
