@@ -69,11 +69,11 @@ class VotingState extends State<Voting> {
       subscription = widget.socketStream.listen((event) {
         var data = utf8.decode(event).replaceAll("\n", "");
         var jsonData = jsonDecode(data);
-        debugPrint("[DEBUG] Get duel jsonData: $jsonData");
+        debugPrint("[DEBUG] Get duel result jsonData: $jsonData");
         var status = jsonData["status"];
 
         if (status != 200) {
-          debugPrint("[WARN] Get duel bad status: $status");
+          debugPrint("[WARN] Get duel result bad status: $status");
           return;
         }
 
