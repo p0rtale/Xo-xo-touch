@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:xo_xo_touch/game_results.dart';
 import 'package:xo_xo_touch/room.dart';
 
 import 'package:xo_xo_touch/answers.dart';
@@ -56,6 +57,9 @@ class MyApp extends StatelessWidget {
           case "duelvotingended":
             _votingKey.currentState!.getDuelResults();
             break;
+          case "roundvotingended":
+            Navigator.of(_roomKey.currentContext!).pushNamedAndRemoveUntil('/gameresults', (route) => false);
+            break;
         }
       }, onDone: () {
         debugPrint("[WARN] broadcast connection closed");
@@ -83,6 +87,7 @@ class MyApp extends StatelessWidget {
           '/answers': (context) => Answers(requestSocket, socketStream, key: _answersKey),
           '/answersend': (context) => AnswersEnd(key: _answersEndKey),
           '/voting': (context) => Voting(requestSocket, socketStream, key: _votingKey),
+          '/gameresults': (context) => GameResults(requestSocket, socketStream),
           '/authorization': (context) => AuthorizationScreen(requestSocket: requestSocket,
               socketStream: socketStream)
         }
